@@ -3,745 +3,1467 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workplace Harassment Analytics Dashboard</title>
-    
-    <!-- Google Fonts: Inter -->
+    <title>SafeSpace Analytics — Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    
-    <!-- Chart.js 4.4.0 -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    
-    <!-- Leaflet 1.9.4 -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
         :root {
-            --bg-gradient: linear-gradient(135deg, #120024 0%, #0a0014 45%, #001226 100%);
+            --bg-base: linear-gradient(135deg, #1a0033 0%, #0d001a 50%, #001a33 100%);
             --card-bg: rgba(255, 255, 255, 0.05);
-            --card-border: rgba(255, 255, 255, 0.1);
+            --card-border: 1px solid rgba(255, 255, 255, 0.1);
             --card-hover-border: rgba(168, 85, 247, 0.4);
-            --text-primary: #f8fafc;
+            --text-main: #f8fafc;
             --text-secondary: #94a3b8;
             --text-muted: #64748b;
             --primary-grad: linear-gradient(135deg, #a855f7, #ec4899);
+            --primary-color: #a855f7;
+            --secondary-color: #ec4899;
             --success-grad: linear-gradient(135deg, #10b981, #34d399);
             --warning-grad: linear-gradient(135deg, #f59e0b, #fbbf24);
             --danger-grad: linear-gradient(135deg, #ef4444, #f97316);
-            --kpi-1-grad: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(236, 72, 153, 0.25));
-            --kpi-2-grad: linear-gradient(135deg, rgba(236, 72, 153, 0.25), rgba(249, 115, 22, 0.25));
-            --kpi-3-grad: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(6, 182, 212, 0.25));
-            --kpi-4-grad: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(245, 158, 11, 0.25));
-            --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
-            --shadow-hover: 0 16px 48px rgba(168, 85, 247, 0.25);
-            --badge-bg: rgba(16, 185, 129, 0.15);
-            --badge-border: rgba(16, 185, 129, 0.35);
-            --badge-text: #34d399;
-            --table-row-hover: rgba(255, 255, 255, 0.04);
-            --table-border: rgba(255, 255, 255, 0.08);
-            --chart-grid: rgba(255, 255, 255, 0.07);
+            --glass-blur: blur(20px);
+            --shadow-subtle: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.25);
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --drawer-bg: rgba(17, 10, 31, 0.95);
+            --modal-bg: rgba(20, 12, 38, 0.95);
+            --highlight-yellow: rgba(251, 191, 36, 0.2);
+            --highlight-yellow-border: #fbbf24;
         }
 
         body.light-theme {
-            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #eef2f6 50%, #f1f5f9 100%);
-            --card-bg: rgba(255, 255, 255, 0.88);
-            --card-border: rgba(0, 0, 0, 0.08);
+            --bg-base: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 50%, #cbd5e1 100%);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --card-border: 1px solid rgba(0, 0, 0, 0.08);
             --card-hover-border: rgba(168, 85, 247, 0.6);
-            --text-primary: #0f172a;
+            --text-main: #0f172a;
             --text-secondary: #475569;
             --text-muted: #94a3b8;
-            --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.06);
-            --shadow-hover: 0 16px 40px rgba(168, 85, 247, 0.2);
-            --badge-bg: rgba(16, 185, 129, 0.12);
-            --badge-border: rgba(16, 185, 129, 0.3);
-            --badge-text: #059669;
-            --table-row-hover: rgba(0, 0, 0, 0.02);
-            --table-border: rgba(0, 0, 0, 0.06);
-            --chart-grid: rgba(0, 0, 0, 0.06);
+            --drawer-bg: rgba(255, 255, 255, 0.98);
+            --modal-bg: rgba(255, 255, 255, 0.98);
+            --shadow-subtle: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+            --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.05);
+            --highlight-yellow: rgba(251, 191, 36, 0.35);
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            transition: background 0.3s ease, border-color 0.3s ease, color 0.2s ease;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
         }
 
         body {
-            background: var(--bg-gradient);
+            background: var(--bg-base);
             background-attachment: fixed;
-            color: var(--text-primary);
+            color: var(--text-main);
             min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
             overflow-x: hidden;
-            position: relative;
+            transition: var(--transition-smooth);
         }
 
-        /* Ambient floating glow circles in background */
-        body::before, body::after {
-            content: '';
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(120px);
-            z-index: -1;
-            pointer-events: none;
-            opacity: 0.35;
-        }
-        body::before {
-            width: 500px;
-            height: 500px;
-            background: #9333ea;
-            top: -100px;
-            left: -100px;
-            animation: floatGlow 14s infinite alternate ease-in-out;
-        }
-        body::after {
-            width: 600px;
-            height: 600px;
-            background: #0284c7;
-            bottom: -150px;
-            right: -100px;
-            animation: floatGlow 18s infinite alternate-reverse ease-in-out;
-        }
-        @keyframes floatGlow {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(80px, 60px) scale(1.15); }
-        }
-
-        .dashboard-container {
-            max-width: 1480px;
-            margin: 0 auto;
-            padding: 24px 32px 48px;
-        }
-
-        /* Glassmorphism Card Style */
-        .glass-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 18px;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            box-shadow: var(--shadow-card);
-            padding: 22px 24px;
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-        }
-        .glass-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-hover);
-            border-color: var(--card-hover-border);
-        }
-
-        /* Top Header */
+        /* Header Styling */
         header.dashboard-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 18px;
-            margin-bottom: 28px;
-            padding: 20px 28px;
+            gap: 16px;
+            padding: 18px 28px;
+            background: var(--card-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: var(--card-border);
+            border-radius: 16px;
+            box-shadow: var(--shadow-subtle);
         }
-        .brand-section {
+
+        .brand-container {
             display: flex;
             align-items: center;
             gap: 16px;
         }
-        .brand-icon {
-            font-size: 40px;
-            filter: drop-shadow(0 4px 12px rgba(168, 85, 247, 0.4));
+
+        .logo-icon {
+            font-size: 32px;
+            filter: drop-shadow(0 2px 8px rgba(168, 85, 247, 0.5));
         }
-        .brand-title {
-            font-size: 26px;
+
+        .brand-text h1 {
+            font-size: 24px;
             font-weight: 800;
             letter-spacing: -0.5px;
             background: var(--primary-grad);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .brand-subtitle {
+
+        .brand-text p {
             font-size: 13px;
             color: var(--text-secondary);
-            margin-top: 3px;
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        /* Global Search in Header */
+        .header-search-box {
+            position: relative;
+            width: 320px;
+            display: flex;
+            align-items: center;
+        }
+
+        .header-search-box input {
+            width: 100%;
+            padding: 10px 38px 10px 38px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(0, 0, 0, 0.25);
+            color: var(--text-main);
+            font-size: 13px;
+            font-weight: 500;
+            outline: none;
+            transition: var(--transition-smooth);
+            backdrop-filter: blur(10px);
+        }
+
+        body.light-theme .header-search-box input {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.15);
+        }
+
+        .header-search-box input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        body.light-theme .header-search-box input:focus {
+            background: #ffffff;
+        }
+
+        .search-prefix-icon {
+            position: absolute;
+            left: 12px;
+            font-size: 14px;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .search-clear-btn {
+            position: absolute;
+            right: 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 14px;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 50%;
+            display: none;
+        }
+
+        .search-clear-btn:hover {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.15);
+        }
+
+        .search-match-count {
+            position: absolute;
+            top: 42px;
+            left: 14px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fbbf24;
+            background: rgba(0, 0, 0, 0.65);
+            padding: 2px 8px;
+            border-radius: 10px;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            display: none;
+            z-index: 10;
+        }
+
+        /* Header Badges & Actions */
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .pipeline-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);
+            transition: var(--transition-smooth);
+        }
+
+        .status-badge.error {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border-color: rgba(239, 68, 68, 0.3);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.1);
+        }
+
+        .action-btn {
+            background: var(--card-bg);
+            border: var(--card-border);
+            color: var(--text-main);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition-smooth);
+            backdrop-filter: var(--glass-blur);
+        }
+
+        .action-btn:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.25);
+        }
+
+        .spin {
+            animation: spinAnim 1s linear infinite;
+        }
+
+        @keyframes spinAnim {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Filter Chips Bar */
+        .filter-bar {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 18px;
+            background: rgba(168, 85, 247, 0.12);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 12px;
+            backdrop-filter: var(--glass-blur);
+            animation: slideDown 0.3s ease;
+        }
+
+        .filter-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--primary-grad);
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            box-shadow: 0 2px 8px rgba(168, 85, 247, 0.4);
+        }
+
+        .chip-close-btn {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0 2px;
+            border-radius: 50%;
+        }
+
+        .chip-close-btn:hover {
+            transform: scale(1.2);
+        }
+
+        /* Grid Layouts */
+        .dashboard-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .row-kpis {
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        }
+
+        .row-2col {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .row-full {
+            grid-template-columns: 1fr;
+        }
+
+        /* Card / Glass Panel */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: var(--card-border);
+            border-radius: 16px;
+            padding: 22px;
+            box-shadow: var(--shadow-card);
+            position: relative;
+            transition: var(--transition-smooth);
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--card-hover-border);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+        }
+
+        /* KPI Cards */
+        .kpi-card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 140px;
+            border-radius: 16px;
+            padding: 24px;
+            border: var(--card-border);
+            overflow: hidden;
+            box-shadow: var(--shadow-card);
+            transition: var(--transition-smooth);
+        }
+
+        .kpi-card.kpi-1 { background: linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(236, 72, 153, 0.15) 100%); }
+        .kpi-card.kpi-2 { background: linear-gradient(135deg, rgba(236, 72, 153, 0.25) 0%, rgba(249, 115, 22, 0.15) 100%); }
+        .kpi-card.kpi-3 { background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(6, 182, 212, 0.15) 100%); }
+        .kpi-card.kpi-4 { background: linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(249, 115, 22, 0.15) 100%); }
+
+        .kpi-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .kpi-label {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+        }
+
+        .kpi-icon {
+            font-size: 24px;
+            opacity: 0.9;
+        }
+
+        .kpi-number {
+            font-size: 44px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin: 12px 0 6px 0;
+            letter-spacing: -1px;
+            color: #ffffff;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        body.light-theme .kpi-number {
+            color: #0f172a;
+            text-shadow: none;
+        }
+
+        .kpi-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
             font-weight: 500;
         }
 
-        .header-controls {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-        .pipeline-status-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 6px 12px;
-            border-radius: 999px;
-            border: 1px solid var(--card-border);
-        }
-        .status-badge {
-            font-size: 11px;
-            font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 999px;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            background: var(--badge-bg);
-            border: 1px solid var(--badge-border);
-            color: var(--badge-text);
-        }
-        .status-badge.error {
-            background: rgba(239, 68, 68, 0.15);
-            border-color: rgba(239, 68, 68, 0.35);
-            color: #f87171;
-        }
-
-        .btn-action {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 9px 16px;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            border: 1px solid var(--card-border);
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--text-primary);
-            transition: all 0.2s ease;
-        }
-        .btn-action:hover {
-            background: rgba(168, 85, 247, 0.2);
-            border-color: rgba(168, 85, 247, 0.4);
-            color: #c084fc;
-        }
-        .spin {
-            display: inline-block;
-            animation: spinAnim 1s linear infinite;
-        }
-        @keyframes spinAnim {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        /* Grid Layout */
-        .dashboard-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-
-        /* Row 1: KPI Cards */
-        .kpi-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-        }
-        .kpi-card {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            min-height: 140px;
-        }
-        .kpi-card:nth-child(1) { background: var(--kpi-1-grad); }
-        .kpi-card:nth-child(2) { background: var(--kpi-2-grad); }
-        .kpi-card:nth-child(3) { background: var(--kpi-3-grad); }
-        .kpi-card:nth-child(4) { background: var(--kpi-4-grad); }
-
-        .kpi-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .kpi-label {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .kpi-icon {
-            font-size: 26px;
-            opacity: 0.9;
-        }
-        .kpi-value {
-            font-size: 44px;
-            font-weight: 800;
-            letter-spacing: -1px;
-            margin-top: 10px;
-            line-height: 1.1;
-        }
-        .kpi-subtext {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 6px;
-        }
-
-        /* 2-Column Row */
-        .grid-two-col {
-            display: grid;
-            grid-template-columns: 1.15fr 0.85fr;
-            gap: 24px;
-        }
-        .grid-two-col.equal {
-            grid-template-columns: 1fr 1fr;
-        }
-
-        /* Panel Header */
+        /* Panel Headers */
         .panel-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 18px;
-            position: relative;
         }
-        .panel-title {
-            font-size: 17px;
-            font-weight: 700;
+
+        .panel-title-group {
             display: flex;
             align-items: center;
             gap: 10px;
-            letter-spacing: -0.3px;
         }
+
+        .panel-title-group h3 {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
         .panel-subtitle {
             font-size: 12px;
-            color: var(--text-secondary);
-            font-weight: 400;
-            margin-left: 2px;
+            color: var(--text-muted);
+            margin-left: 6px;
         }
 
-        /* Download PNG button */
-        .btn-download-panel {
-            background: transparent;
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            padding: 4px 8px;
-            font-size: 11px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.2s ease, background 0.2s ease;
+        .panel-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        .glass-card:hover .btn-download-panel {
+
+        .btn-png {
+            opacity: 0;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-main);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .card:hover .btn-png {
             opacity: 1;
         }
-        .btn-download-panel:hover {
-            background: rgba(168, 85, 247, 0.2);
-            color: #d8b4fe;
-            border-color: rgba(168, 85, 247, 0.4);
+
+        .btn-png:hover {
+            background: var(--primary-grad);
+            color: #ffffff;
+            border-color: transparent;
         }
 
-        /* Chart Canvas Containers */
         .chart-box {
             position: relative;
             width: 100%;
-            height: 310px;
+            height: 320px;
         }
-        .chart-box.donut-box {
+
+        /* Feature 4: Year Range Slider Styling */
+        .year-slider-box {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            gap: 10px;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            margin-bottom: 14px;
+        }
+
+        body.light-theme .year-slider-box {
+            background: rgba(0, 0, 0, 0.03);
+            border-color: rgba(0, 0, 0, 0.08);
+        }
+
+        .year-slider-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .slider-meta-badges {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .range-badge {
+            padding: 3px 10px;
+            background: var(--primary-grad);
+            color: #ffffff;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .charges-badge {
+            color: var(--text-secondary);
+            font-size: 11px;
+        }
+
+        .btn-reset-slider {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-main);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-reset-slider:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
+            color: #f87171;
+        }
+
+        .range-slider-wrapper {
+            position: relative;
+            height: 24px;
+            display: flex;
             align-items: center;
         }
-        .chart-box.full-width {
-            height: 280px;
-        }
 
-        /* Leaflet World Map Container */
-        #worldMap {
+        .slider-track {
+            position: absolute;
             width: 100%;
-            height: 390px;
-            border-radius: 12px;
-            z-index: 1;
-            background: rgba(10, 10, 20, 0.6);
-        }
-        .map-legend {
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(8px);
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 11px;
-            color: #f8fafc;
-            line-height: 18px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-        }
-        .map-legend i {
-            width: 14px;
-            height: 14px;
-            float: left;
-            margin-right: 8px;
-            opacity: 0.9;
-            border-radius: 3px;
-        }
-
-        /* Company Table */
-        .table-container {
-            max-height: 390px;
-            overflow-y: auto;
-            border-radius: 12px;
-        }
-        .table-container::-webkit-scrollbar {
-            width: 6px;
-        }
-        .table-container::-webkit-scrollbar-thumb {
+            height: 6px;
             background: rgba(255, 255, 255, 0.15);
             border-radius: 4px;
         }
-        .custom-table {
+
+        body.light-theme .slider-track {
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        .slider-range-fill {
+            position: absolute;
+            height: 6px;
+            background: var(--primary-grad);
+            border-radius: 4px;
+            z-index: 1;
+        }
+
+        .dual-range-input {
+            position: absolute;
+            width: 100%;
+            pointer-events: none;
+            -webkit-appearance: none;
+            background: transparent;
+            z-index: 2;
+        }
+
+        .dual-range-input::-webkit-slider-thumb {
+            pointer-events: all;
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 3px solid #a855f7;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.7);
+            transition: transform 0.1s;
+        }
+
+        .dual-range-input::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* World Map */
+        #worldMap {
+            width: 100%;
+            height: 440px;
+            border-radius: 12px;
+            background: #110d1a;
+            z-index: 1;
+        }
+
+        .map-legend {
+            background: rgba(13, 0, 26, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 8px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: #f8fafc;
+            font-size: 11px;
+            line-height: 18px;
+        }
+
+        .map-legend i {
+            width: 12px;
+            height: 12px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.85;
+            border-radius: 2px;
+        }
+
+        /* Search highlights */
+        .search-highlight {
+            background: var(--highlight-yellow) !important;
+            border-left: 4px solid var(--highlight-yellow-border) !important;
+        }
+
+        /* Table Styling */
+        .table-container {
+            width: 100%;
+            height: 440px;
+            overflow-y: auto;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        table.company-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
             text-align: left;
         }
-        .custom-table th {
+
+        table.company-table th {
             position: sticky;
             top: 0;
-            background: rgba(26, 16, 48, 0.95);
+            background: rgba(20, 10, 35, 0.95);
             backdrop-filter: blur(10px);
-            padding: 12px 14px;
-            font-weight: 600;
+            padding: 14px 16px;
+            font-weight: 700;
             color: var(--text-secondary);
-            border-bottom: 1px solid var(--table-border);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
             cursor: pointer;
             user-select: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             z-index: 2;
         }
-        body.light-theme .custom-table th {
+
+        body.light-theme table.company-table th {
             background: rgba(241, 245, 249, 0.95);
+            color: var(--text-secondary);
         }
-        .custom-table th:hover {
-            color: var(--text-primary);
+
+        table.company-table th:hover {
+            color: var(--primary-color);
         }
-        .custom-table td {
-            padding: 11px 14px;
-            border-bottom: 1px solid var(--table-border);
-            color: var(--text-primary);
+
+        table.company-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
         }
-        .custom-table tr:hover {
-            background: var(--table-row-hover);
+
+        table.company-table tr.clickable-row {
+            cursor: pointer;
+            transition: var(--transition-smooth);
         }
-        .search-table-input {
-            width: 180px;
-            padding: 6px 12px;
-            font-size: 12px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            color: var(--text-primary);
-            outline: none;
+
+        table.company-table tr.clickable-row:hover {
+            background: rgba(168, 85, 247, 0.12);
         }
-        .search-table-input:focus {
-            border-color: #a855f7;
+
+        .risk-badge {
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            display: inline-block;
         }
+
+        .risk-high { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .risk-medium { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .risk-low { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
 
         /* Risk Alerts Grid */
         .alerts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 16px;
         }
+
         .alert-card {
-            background: rgba(239, 68, 68, 0.07);
-            border: 1px solid rgba(239, 68, 68, 0.25);
-            border-radius: 14px;
-            padding: 16px 18px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            position: relative;
-            transition: all 0.25s ease;
+            justify-content: space-between;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            border-radius: 12px;
+            padding: 16px 20px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            animation: pulseAlert 2.5s infinite;
         }
-        .alert-card.high-pulse {
-            animation: pulseHigh 2.5s infinite;
-        }
-        @keyframes pulseHigh {
+
+        @keyframes pulseAlert {
             0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
             70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
             100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
+
         .alert-card:hover {
             transform: translateY(-3px);
-            border-color: #ef4444;
-            background: rgba(239, 68, 68, 0.12);
+            background: rgba(239, 68, 68, 0.16);
+            border-color: rgba(239, 68, 68, 0.5);
         }
-        .alert-info h4 {
-            font-size: 14px;
+
+        .alert-company {
             font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 4px;
+            font-size: 15px;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        .alert-info p {
+
+        body.light-theme .alert-company {
+            color: #0f172a;
+        }
+
+        .alert-sub {
             font-size: 12px;
-            color: var(--text-secondary);
+            color: var(--text-muted);
+            margin-top: 2px;
         }
-        .alert-score-badge {
+
+        .alert-score-pill {
             text-align: right;
         }
+
         .alert-score-num {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 800;
-            color: #ef4444;
-        }
-        .level-pill {
-            font-size: 10px;
-            font-weight: 700;
-            padding: 3px 8px;
-            border-radius: 999px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid rgba(239, 68, 68, 0.4);
             color: #f87171;
+            line-height: 1;
+        }
+
+        /* Overlay & Modals / Drawers */
+        .drawer-overlay, .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .drawer-overlay.active, .modal-backdrop.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Feature 1 & Feature 3: Slide-in Side Drawers */
+        .side-drawer {
+            position: fixed;
+            top: 0;
+            right: -450px;
+            height: 100vh;
+            background: var(--drawer-bg);
+            border-left: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: -8px 0 32px rgba(0, 0, 0, 0.6);
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            padding: 28px;
+            overflow-y: auto;
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .side-drawer.active {
+            right: 0;
+        }
+
+        .industry-drawer {
+            width: 380px;
+        }
+
+        .company-drawer {
+            width: 420px;
+        }
+
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .drawer-badge {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--primary-color);
             display: inline-block;
-            margin-top: 2px;
+            margin-bottom: 4px;
+        }
+
+        .drawer-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1.2;
+        }
+
+        .btn-close {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-main);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-close:hover {
+            background: #ef4444;
+            color: #ffffff;
+            border-color: transparent;
+            transform: rotate(90deg);
+        }
+
+        .drawer-stat-hero {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(236, 72, 153, 0.15) 100%);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .drawer-huge-val {
+            font-size: 44px;
+            font-weight: 800;
+            color: #ffffff;
+            margin: 6px 0;
+        }
+
+        body.light-theme .drawer-huge-val {
+            color: #0f172a;
+        }
+
+        .drawer-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .drawer-stat-tile {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .tile-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .tile-val {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-top: 4px;
+        }
+
+        .drawer-section {
+            margin-bottom: 24px;
+        }
+
+        .drawer-section-title {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .drawer-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .drawer-list li {
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--text-main);
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid var(--primary-color);
+            border-radius: 6px;
+        }
+
+        /* Feature 2: Country Detail Modal */
+        .modal-card {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.92);
+            width: 480px;
+            max-width: 90vw;
+            background: var(--modal-bg);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            z-index: 1002;
+            padding: 32px;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition-smooth);
+        }
+
+        .modal-card.active {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .country-hero-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .country-flag-icon {
+            font-size: 42px;
+            line-height: 1;
+        }
+
+        .country-name-hero {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1.1;
+        }
+
+        .region-badge-pill {
+            display: inline-block;
+            margin-top: 4px;
+            padding: 3px 10px;
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .score-highlight-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 16px 20px;
+            margin-bottom: 22px;
+        }
+
+        .score-banner-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .score-banner-val {
+            font-size: 36px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .legal-indicators-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .indicator-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .indicator-row.pass {
+            border-left: 3px solid #10b981;
+        }
+
+        .indicator-row.fail {
+            border-left: 3px solid #ef4444;
+            opacity: 0.8;
+        }
+
+        .ind-status-icon {
+            font-size: 16px;
         }
 
         /* Footer */
         footer.dashboard-footer {
-            margin-top: 40px;
             text-align: center;
+            padding: 20px;
             font-size: 13px;
             color: var(--text-muted);
-            padding: 20px 0;
-            border-top: 1px solid var(--card-border);
+            font-weight: 500;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            margin-top: 20px;
         }
 
-        /* Staggered Load Animation */
-        .fade-in-up {
-            opacity: 0;
-            transform: translateY(20px);
-            animation: fadeInUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        @keyframes fadeInUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .row-2col {
+                grid-template-columns: 1fr;
+            }
+            .header-search-box {
+                width: 240px;
             }
         }
 
-        /* Responsive Breakpoints */
-        @media (max-width: 1100px) {
-            .kpi-row { grid-template-columns: repeat(2, 1fr); }
-            .grid-two-col, .grid-two-col.equal { grid-template-columns: 1fr; }
-        }
-        @media (max-width: 650px) {
-            .kpi-row { grid-template-columns: 1fr; }
-            .dashboard-container { padding: 16px; }
-            header.dashboard-header { flex-direction: column; align-items: flex-start; }
-            .header-controls { width: 100%; justify-content: space-between; }
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+            header.dashboard-header {
+                padding: 14px;
+            }
+            .header-search-box {
+                width: 100%;
+                order: 3;
+            }
+            .side-drawer {
+                width: 100vw !important;
+            }
+            .modal-card {
+                width: 95vw !important;
+                padding: 20px;
+            }
         }
     </style>
 </head>
 <body>
 
-    <div class="dashboard-container">
-        <!-- Header -->
-        <header class="glass-card dashboard-header fade-in-up" style="animation-delay: 50ms;">
-            <div class="brand-section">
-                <span class="brand-icon">🛡️</span>
-                <div>
-                    <h1 class="brand-title">Workplace Harassment Analytics</h1>
-                    <p class="brand-subtitle">Big Data Pipeline &mdash; EEOC + WORLD Legal Dataset</p>
-                </div>
-            </div>
-
-            <div class="header-controls">
-                <div class="pipeline-status-group" id="pipelineStatusBadges">
-                    <span class="status-badge" id="badgeHdfs">HDFS &bull; OK</span>
-                    <span class="status-badge" id="badgeMongo">MongoDB &bull; OK</span>
-                    <span class="status-badge" id="badgePig">Pig &bull; OK</span>
-                    <span class="status-badge" id="badgeHive">Hive &bull; OK</span>
-                    <span class="status-badge" id="badgeSqoop">Sqoop &bull; OK</span>
-                </div>
-
-                <button class="btn-action" id="btnRefresh" title="Refresh all dashboard metrics">
-                    <span id="refreshIcon">🔄</span> Refresh
-                </button>
-
-                <button class="btn-action" id="btnThemeToggle" title="Toggle Dark/Light Mode">
-                    <span id="themeIcon">🌙</span>
-                </button>
-            </div>
-        </header>
-
-        <div class="dashboard-grid">
-            <!-- Row 1: 4 KPI Cards -->
-            <div class="kpi-row">
-                <div class="glass-card kpi-card fade-in-up" style="animation-delay: 100ms;">
-                    <div class="kpi-header">
-                        <span class="kpi-label">Total Charges</span>
-                        <span class="kpi-icon">📊</span>
-                    </div>
-                    <div class="kpi-value" id="kpiTotalCharges">0</div>
-                    <div class="kpi-subtext">EEOC harassment charge filings (1997-2023)</div>
-                </div>
-
-                <div class="glass-card kpi-card fade-in-up" style="animation-delay: 150ms;">
-                    <div class="kpi-header">
-                        <span class="kpi-label">Female Complainants</span>
-                        <span class="kpi-icon">👥</span>
-                    </div>
-                    <div class="kpi-value" id="kpiFemalePercentage">0%</div>
-                    <div class="kpi-subtext">162,095 female vs. 32,905 male charges</div>
-                </div>
-
-                <div class="glass-card kpi-card fade-in-up" style="animation-delay: 200ms;">
-                    <div class="kpi-header">
-                        <span class="kpi-label">Countries Analyzed</span>
-                        <span class="kpi-icon">🌍</span>
-                    </div>
-                    <div class="kpi-value" id="kpiCountries">0</div>
-                    <div class="kpi-subtext">WORLD global harassment legal protections</div>
-                </div>
-
-                <div class="glass-card kpi-card fade-in-up" style="animation-delay: 250ms;">
-                    <div class="kpi-header">
-                        <span class="kpi-label">High-Risk Regions</span>
-                        <span class="kpi-icon">⚠️</span>
-                    </div>
-                    <div class="kpi-value" id="kpiHighRiskRegions">0</div>
-                    <div class="kpi-subtext">Protection score benchmark &lt; 3.0 / 5.0</div>
-                </div>
-            </div>
-
-            <!-- Row 2: 2 Charts (Industries + Sex) -->
-            <div class="grid-two-col">
-                <div class="glass-card fade-in-up" style="animation-delay: 300ms;" id="panelIndustries">
-                    <div class="panel-header">
-                        <div class="panel-title">
-                            <span>🏢 Top 10 Industries by Charges</span>
-                            <span class="panel-subtitle">EEOC charges by NAICS code</span>
-                        </div>
-                        <button class="btn-download-panel" onclick="downloadChartAsPNG('industriesChart', 'top_industries.png')">📷 PNG</button>
-                    </div>
-                    <div class="chart-box">
-                        <canvas id="industriesChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="glass-card fade-in-up" style="animation-delay: 350ms;" id="panelSex">
-                    <div class="panel-header">
-                        <div class="panel-title">
-                            <span>👥 Charges by Sex</span>
-                            <span class="panel-subtitle">Complainant distribution</span>
-                        </div>
-                        <button class="btn-download-panel" onclick="downloadChartAsPNG('sexChart', 'charges_by_sex.png')">📷 PNG</button>
-                    </div>
-                    <div class="chart-box donut-box">
-                        <canvas id="sexChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Row 3: 2 Charts (Yearly Trend + Race) -->
-            <div class="grid-two-col equal">
-                <div class="glass-card fade-in-up" style="animation-delay: 400ms;" id="panelYearly">
-                    <div class="panel-header">
-                        <div class="panel-title">
-                            <span>📈 Yearly Trend (1997 &ndash; 2023)</span>
-                            <span class="panel-subtitle">Longitudinal harassment charge volume</span>
-                        </div>
-                        <button class="btn-download-panel" onclick="downloadChartAsPNG('yearlyChart', 'yearly_trend.png')">📷 PNG</button>
-                    </div>
-                    <div class="chart-box">
-                        <canvas id="yearlyChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="glass-card fade-in-up" style="animation-delay: 450ms;" id="panelRace">
-                    <div class="panel-header">
-                        <div class="panel-title">
-                            <span>🧬 Charges by Race</span>
-                            <span class="panel-subtitle">Racial demographics of filing parties</span>
-                        </div>
-                        <button class="btn-download-panel" onclick="downloadChartAsPNG('raceChart', 'charges_by_race.png')">📷 PNG</button>
-                    </div>
-                    <div class="chart-box">
-                        <canvas id="raceChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Row 4: 1 Full-Width Chart (Region Protection) -->
-            <div class="glass-card fade-in-up" style="animation-delay: 500ms;" id="panelRegions">
-                <div class="panel-header">
-                    <div class="panel-title">
-                        <span>🌐 Global Regional Protection Scores</span>
-                        <span class="panel-subtitle">WORLD legal protection index (0.0 = Minimum, 5.0 = Comprehensive)</span>
-                    </div>
-                    <button class="btn-download-panel" onclick="downloadChartAsPNG('regionsChart', 'regional_protection.png')">📷 PNG</button>
-                </div>
-                <div class="chart-box full-width">
-                    <canvas id="regionsChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Row 5: World Map & Company Risk Table -->
-            <div class="grid-two-col equal">
-                <div class="glass-card fade-in-up" style="animation-delay: 550ms;" id="panelMap">
-                    <div class="panel-header">
-                        <div class="panel-title">
-                            <span>🗺️ Global Legal Protection Map</span>
-                            <span class="panel-subtitle">Choropleth by country legal strength</span>
-                        </div>
-                    </div>
-                    <div id="worldMap"></div>
-                </div>
-
-                <div class="glass-card fade-in-up" style="animation-delay: 600ms;" id="panelTable">
-                    <div class="panel-header">
-                        <div class="panel-title">
-                            <span>🏢 Organization Risk Registry</span>
-                            <span class="panel-subtitle">Dynamic risk scores</span>
-                        </div>
-                        <input type="text" id="companySearch" class="search-table-input" placeholder="Search company...">
-                    </div>
-                    <div class="table-container">
-                        <table class="custom-table" id="companiesTable">
-                            <thead>
-                                <tr>
-                                    <th onclick="sortTable(0)">Company &#x21C5;</th>
-                                    <th onclick="sortTable(1)">Score &#x21C5;</th>
-                                    <th onclick="sortTable(2)">Level &#x21C5;</th>
-                                </tr>
-                            </thead>
-                            <tbody id="companyTableBody">
-                                <tr><td colspan="3" style="text-align:center; color:var(--text-muted);">Loading registry...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Row 6: Risk Alerts Section -->
-            <div class="glass-card fade-in-up" style="animation-delay: 650ms;" id="panelAlerts">
-                <div class="panel-header">
-                    <div class="panel-title">
-                        <span>🚨 Active Risk Alerts</span>
-                        <span class="panel-subtitle">High-exposure entities requiring immediate compliance review</span>
-                    </div>
-                </div>
-                <div class="alerts-grid" id="alertsContainer">
-                    <div style="color:var(--text-muted); font-size:13px;">Analyzing active alerts...</div>
-                </div>
+    <!-- Header -->
+    <header class="dashboard-header">
+        <div class="brand-container">
+            <span class="logo-icon">🛡️</span>
+            <div class="brand-text">
+                <h1>SafeSpace Analytics</h1>
+                <p>Big Data Pipeline for Workplace Harassment Pattern Detection — EEOC + WORLD Legal Dataset</p>
             </div>
         </div>
 
-        <!-- Footer -->
-        <footer class="dashboard-footer">
-            Developed by Big Data Analytics Team &bull; Big Data Project 2026 &bull; Apache Hadoop, Hive, Pig, MongoDB, Sqoop &amp; Spring Boot
-        </footer>
+        <!-- Feature 5: Global Search -->
+        <div class="header-search-box">
+            <span class="search-prefix-icon">🔍</span>
+            <input type="text" id="globalSearchInput" placeholder="Search countries, companies..." autocomplete="off">
+            <button id="clearGlobalSearch" class="search-clear-btn" title="Clear search">✕</button>
+            <div id="globalSearchCount" class="search-match-count">0 matches</div>
+        </div>
+
+        <div class="header-right">
+            <div class="pipeline-badges">
+                <span class="status-badge" id="badgeHdfs">HDFS • OK</span>
+                <span class="status-badge" id="badgeMongo">MongoDB • OK</span>
+                <span class="status-badge" id="badgePig">Pig • OK</span>
+                <span class="status-badge" id="badgeHive">Hive • OK</span>
+                <span class="status-badge" id="badgeSqoop">Sqoop • OK</span>
+            </div>
+            <button id="btnRefresh" class="action-btn">
+                <span id="refreshIcon">🔄</span> Refresh
+            </button>
+            <button id="btnThemeToggle" class="action-btn" title="Toggle Theme">
+                <span id="themeIcon">🌙</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Filter Chip Bar for Feature 1 -->
+    <div id="filterBar" class="filter-bar">
+        <span style="font-size: 13px; font-weight: 600; color: var(--text-secondary);">Active Filter:</span>
+        <div class="filter-chip">
+            <span id="filterChipText">Industry</span>
+            <button id="clearFilterChipBtn" class="chip-close-btn" title="Clear filter">✕</button>
+        </div>
     </div>
 
-    <!-- Main Dashboard Controller Script -->
+    <!-- Row 1: KPI Cards -->
+    <div class="dashboard-grid row-kpis">
+        <div class="kpi-card kpi-1">
+            <div class="kpi-top">
+                <span class="kpi-label">Total Charges</span>
+                <span class="kpi-icon">📊</span>
+            </div>
+            <div class="kpi-number" id="kpiTotalCharges">0</div>
+            <div class="kpi-desc">EEOC harassment charge filings (1997-2023)</div>
+        </div>
+        <div class="kpi-card kpi-2">
+            <div class="kpi-top">
+                <span class="kpi-label">Female Complainants</span>
+                <span class="kpi-icon">👥</span>
+            </div>
+            <div class="kpi-number" id="kpiFemalePercentage">0%</div>
+            <div class="kpi-desc">162,095 female vs. 32,905 male charges</div>
+        </div>
+        <div class="kpi-card kpi-3">
+            <div class="kpi-top">
+                <span class="kpi-label">Countries Analyzed</span>
+                <span class="kpi-icon">🌍</span>
+            </div>
+            <div class="kpi-number" id="kpiCountries">0</div>
+            <div class="kpi-desc">WORLD global harassment legal protections</div>
+        </div>
+        <div class="kpi-card kpi-4">
+            <div class="kpi-top">
+                <span class="kpi-label">High-Risk Regions</span>
+                <span class="kpi-icon">⚠️</span>
+            </div>
+            <div class="kpi-number" id="kpiHighRiskRegions">0</div>
+            <div class="kpi-desc">Protection score benchmark &lt; 3.0 / 5.0</div>
+        </div>
+    </div>
+
+    <!-- Row 2: Industries & Sex Donut -->
+    <div class="dashboard-grid row-2col">
+        <div class="card" id="panelIndustries">
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <span style="font-size: 18px;">📊</span>
+                    <div>
+                        <h3>Top 10 Industries by Charges</h3>
+                        <span class="panel-subtitle">Click any bar to inspect &amp; filter details</span>
+                    </div>
+                </div>
+                <div class="panel-actions">
+                    <button class="btn-png" onclick="downloadChartAsPNG('industriesChart', 'top_industries.png')">📥 PNG</button>
+                </div>
+            </div>
+            <div class="chart-box">
+                <canvas id="industriesChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card" id="panelSex">
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <span style="font-size: 18px;">👥</span>
+                    <div>
+                        <h3>Charges by Sex</h3>
+                        <span class="panel-subtitle">Complainant demographic distribution</span>
+                    </div>
+                </div>
+                <div class="panel-actions">
+                    <button class="btn-png" onclick="downloadChartAsPNG('sexChart', 'charges_by_sex.png')">📥 PNG</button>
+                </div>
+            </div>
+            <div class="chart-box">
+                <canvas id="sexChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 3: Yearly Trend (with Feature 4 Range Slider) & Race Chart -->
+    <div class="dashboard-grid row-2col">
+        <div class="card" id="panelYearly">
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <span style="font-size: 18px;">📈</span>
+                    <div>
+                        <h3>Yearly Trend (1997 – 2023)</h3>
+                        <span class="panel-subtitle">Longitudinal harassment charge volume</span>
+                    </div>
+                </div>
+                <div class="panel-actions">
+                    <button class="btn-png" onclick="downloadChartAsPNG('yearlyChart', 'yearly_trend.png')">📥 PNG</button>
+                </div>
+            </div>
+
+            <!-- Feature 4: Year Range Slider -->
+            <div class="year-slider-box">
+                <div class="year-slider-top">
+                    <div class="slider-meta-badges">
+                        <span class="range-badge" id="yearRangeLabel">Selected: 1997 → 2023</span>
+                        <span class="charges-badge" id="yearRangeCharges">195,000 total charges</span>
+                    </div>
+                    <button id="btnResetYearRange" class="btn-reset-slider">Reset</button>
+                </div>
+                <div class="range-slider-wrapper">
+                    <div class="slider-track"></div>
+                    <div class="slider-range-fill" id="sliderRangeFill" style="left: 0%; width: 100%;"></div>
+                    <input type="range" id="sliderYearMin" min="1997" max="2023" value="1997" class="dual-range-input">
+                    <input type="range" id="sliderYearMax" min="1997" max="2023" value="2023" class="dual-range-input">
+                </div>
+            </div>
+
+            <div class="chart-box" style="height: 250px;">
+                <canvas id="yearlyChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card" id="panelRace">
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <span style="font-size: 18px;">🧬</span>
+                    <div>
+                        <h3>Charges by Race</h3>
+                        <span class="panel-subtitle">Racial demographics of filing parties</span>
+                    </div>
+                </div>
+                <div class="panel-actions">
+                    <button class="btn-png" onclick="downloadChartAsPNG('raceChart', 'charges_by_race.png')">📥 PNG</button>
+                </div>
+            </div>
+            <div class="chart-box">
+                <canvas id="raceChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 4: Regional Protection Scores -->
+    <div class="dashboard-grid row-full">
+        <div class="card" id="panelRegions">
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <span style="font-size: 18px;">🌐</span>
+                    <div>
+                        <h3>Global Regional Protection Scores</h3>
+                        <span class="panel-subtitle">WORLD legal protection index (0.0 = Minimum, 5.0 = Comprehensive)</span>
+                    </div>
+                </div>
+                <div class="panel-actions">
+                    <button class="btn-png" onclick="downloadChartAsPNG('regionsChart', 'regional_scores.png')">📥 PNG</button>
+                </div>
+            </div>
+            <div class="chart-box" style="height: 280px;">
+                <canvas id="regionsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 5: World Map & Company Risk Registry -->
+    <div class="dashboard-grid row-2col">
+        <div class="card" id="panelMap">
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <span style="font-size: 18px;">🗺️</span>
+                    <div>
+                        <h3>Global Legal Protection Map</h3>
+                        <span class="panel-subtitle">Click any country to view full legal indicator profile</span>
+                    </div>
+                </div>
+            </div>
+            <div id="worldMap"></div>
+        </div>
+
+        <div class="card" id="panelTable">
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <span style="font-size: 18px;">🏢</span>
+                    <div>
+                        <h3>Organization Risk Registry</h3>
+                        <span class="panel-subtitle">Click any company to open risk audit profile</span>
+                    </div>
+                </div>
+                <div class="panel-actions">
+                    <input type="text" id="companySearch" placeholder="Filter company..." style="padding: 6px 12px; border-radius: 8px; border: var(--card-border); background: rgba(0,0,0,0.2); color: var(--text-main); font-size: 12px; outline: none;">
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="company-table" id="companiesTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0)">Company ⇅</th>
+                            <th onclick="sortTable(1)">Score ⇅</th>
+                            <th onclick="sortTable(2)">Level ⇅</th>
+                        </tr>
+                    </thead>
+                    <tbody id="companyTableBody">
+                        <tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 40px;">Loading registry...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 6: Active Risk Alerts -->
+    <div class="dashboard-grid row-full">
+        <div class="card" id="panelAlerts">
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <span style="font-size: 18px;">🚨</span>
+                    <div>
+                        <h3>Active Risk Alerts</h3>
+                        <span class="panel-subtitle">High-exposure entities requiring immediate compliance review</span>
+                    </div>
+                </div>
+            </div>
+            <div class="alerts-grid" id="alertsContainer">
+                <div style="color: var(--text-muted); font-size: 13px;">Analyzing active alerts...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backdrops -->
+    <div id="drawerOverlay" class="drawer-overlay"></div>
+    <div id="modalOverlay" class="modal-backdrop"></div>
+
+    <!-- FEATURE 1: Industry Detail Side Panel (350px wide) -->
+    <div id="industrySidePanel" class="side-drawer industry-drawer">
+        <div class="drawer-header">
+            <div>
+                <span class="drawer-badge">Industry Exposure Profile</span>
+                <h2 id="indPanelTitle" class="drawer-title">Public Administration</h2>
+            </div>
+            <button id="closeIndPanelBtn" class="btn-close" title="Close panel">✕</button>
+        </div>
+        <div class="drawer-stat-hero">
+            <span class="tile-label">Recorded Harassment Charges</span>
+            <div id="indPanelCharges" class="drawer-huge-val">20,140</div>
+            <span style="font-size: 12px; color: var(--text-secondary);">EEOC filings (1997 – 2023)</span>
+        </div>
+        <div class="drawer-stats-grid">
+            <div class="drawer-stat-tile">
+                <span class="tile-label">Industry Rank</span>
+                <div id="indPanelRank" class="tile-val">#1 of 10</div>
+            </div>
+            <div class="drawer-stat-tile">
+                <span class="tile-label">% of Total Charges</span>
+                <div id="indPanelPercent" class="tile-val">10.3%</div>
+            </div>
+        </div>
+        <div class="drawer-section">
+            <h4 class="drawer-section-title">Industry Profile Summary</h4>
+            <ul class="drawer-list">
+                <li id="indFact1">Sector demonstrates elevated baseline frequency in Title VII filings.</li>
+                <li id="indFact2">Primary reported factors include power imbalances and institutional retaliation.</li>
+                <li id="indFact3">Audit recommendation: Establish independent third-party ombudsman reporting.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- FEATURE 2: Country Detail Modal -->
+    <div id="countryModalCard" class="modal-card">
+        <div class="modal-top">
+            <div class="country-hero-group">
+                <span id="countryFlagEmoji" class="country-flag-icon">🌐</span>
+                <div>
+                    <h2 id="countryModalName" class="country-name-hero">Country Name</h2>
+                    <span id="countryModalRegion" class="region-badge-pill">Region</span>
+                </div>
+            </div>
+            <button id="closeCountryModalBtn" class="btn-close" title="Close modal">✕</button>
+        </div>
+        <div class="score-highlight-banner">
+            <span class="score-banner-label">Legal Protection Score</span>
+            <div id="countryModalScore" class="score-banner-val">4.5 <span style="font-size: 16px; color: var(--text-muted);">/ 5.0</span></div>
+        </div>
+        <div class="drawer-section">
+            <h4 class="drawer-section-title">WORLD Legal Indicators</h4>
+            <div class="legal-indicators-grid">
+                <div class="indicator-row" id="indProhibited">
+                    <span class="ind-status-icon">✅</span>
+                    <span>Sexual harassment prohibited</span>
+                </div>
+                <div class="indicator-row" id="indWorkers">
+                    <span class="ind-status-icon">✅</span>
+                    <span>Covers all workers</span>
+                </div>
+                <div class="indicator-row" id="indPerpetrators">
+                    <span class="ind-status-icon">✅</span>
+                    <span>Covers all perpetrators</span>
+                </div>
+                <div class="indicator-row" id="indResponsibility">
+                    <span class="ind-status-icon">✅</span>
+                    <span>Employer prevention responsibility</span>
+                </div>
+                <div class="indicator-row" id="indLiability">
+                    <span class="ind-status-icon">✅</span>
+                    <span>Employer liability</span>
+                </div>
+                <div class="indicator-row" id="indRetaliation">
+                    <span class="ind-status-icon">✅</span>
+                    <span>Retaliation protection</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FEATURE 3: Company Detail Drawer (400px wide) -->
+    <div id="companyDetailDrawer" class="side-drawer company-drawer">
+        <div class="drawer-header">
+            <div>
+                <span class="drawer-badge">Corporate Risk Dossier</span>
+                <h2 id="compDrawerName" class="drawer-title">Company Name</h2>
+            </div>
+            <button id="closeCompDrawerBtn" class="btn-close" title="Close drawer">✕</button>
+        </div>
+        <div class="drawer-stat-hero">
+            <span class="tile-label">Composite Risk Rating</span>
+            <div id="compDrawerScore" class="drawer-huge-val" style="color: #f87171;">78 <span style="font-size: 18px; color: var(--text-muted);">/ 100</span></div>
+            <div id="compDrawerLevel" class="risk-badge risk-high" style="margin-top: 6px;">HIGH RISK</div>
+        </div>
+        <div class="drawer-section">
+            <h4 class="drawer-section-title">Risk Factors</h4>
+            <ul class="drawer-list">
+                <li><strong>Industry baseline:</strong> <span id="compFactorIndustry" style="color: #f87171;">High Exposure</span></li>
+                <li><strong>Employee size:</strong> <span id="compFactorSize">Large (&gt;5,000 workforce)</span></li>
+                <li><strong>Legal protection context:</strong> <span id="compFactorContext">3.1 / 5.0 (Regional Legal Exposure)</span></li>
+            </ul>
+        </div>
+        <div class="drawer-section">
+            <h4 class="drawer-section-title">Recommended Actions</h4>
+            <ul class="drawer-list">
+                <li>📋 <strong>Conduct immediate HR audit</strong> of internal complaint channels</li>
+                <li>🔍 <strong>Review complaint handling process</strong> and escalation timelines</li>
+                <li>🎓 <strong>Schedule compliance training</strong> including active bystander training</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="dashboard-footer">
+        SafeSpace Analytics © 2026 | Big Data Project
+    </footer>
+
     <script>
-        // Global references for charts
+        // Global variables & state
         let industriesChartInstance = null;
         let sexChartInstance = null;
         let yearlyChartInstance = null;
@@ -750,18 +1472,46 @@
         let leafletMap = null;
         let geojsonLayer = null;
 
-        let countriesDataMap = {}; // name -> score
-        let rawAlertsData = [];
+        // Cached datasets
+        let fullYearlyData = [];
+        let fullIndustriesData = [];
+        let fullAlertsData = [];
+        let countriesScoreMap = {};
+        let embeddedLegalMap = {"antigua and barbuda": {"country": "Antigua and Barbuda", "code": "ATG", "region": "Americas", "score": 4.4, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": true}, "argentina": {"country": "Argentina", "code": "ARG", "region": "Americas", "score": 4.2, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "bahamas": {"country": "Bahamas", "code": "BHS", "region": "Americas", "score": 4.9, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "barbados": {"country": "Barbados", "code": "BRB", "region": "Americas", "score": 3.4, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": false}, "belize": {"country": "Belize", "code": "BLZ", "region": "Americas", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "bolivia": {"country": "Bolivia", "code": "BOL", "region": "Americas", "score": 2.7, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": true}, "brazil": {"country": "Brazil", "code": "BRA", "region": "Americas", "score": 0.1, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "canada": {"country": "Canada", "code": "CAN", "region": "Americas", "score": 3.6, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": true, "liability": false, "retaliation": true}, "chile": {"country": "Chile", "code": "CHL", "region": "Americas", "score": 4.9, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "colombia": {"country": "Colombia", "code": "COL", "region": "Americas", "score": 4.3, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": false}, "costa rica": {"country": "Costa Rica", "code": "CRI", "region": "Americas", "score": 3.4, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": false, "liability": true, "retaliation": true}, "cuba": {"country": "Cuba", "code": "CUB", "region": "Americas", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "dominica": {"country": "Dominica", "code": "DMA", "region": "Americas", "score": 3.5, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": true, "liability": false, "retaliation": true}, "dominican republic": {"country": "Dominican Republic", "code": "DOM", "region": "Americas", "score": 2.1, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": false, "liability": false, "retaliation": false}, "ecuador": {"country": "Ecuador", "code": "ECU", "region": "Americas", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "el salvador": {"country": "El Salvador", "code": "SLV", "region": "Americas", "score": 1.9, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": false, "liability": true, "retaliation": false}, "grenada": {"country": "Grenada", "code": "GRD", "region": "Americas", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "guatemala": {"country": "Guatemala", "code": "GTM", "region": "Americas", "score": 2.2, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "guyana": {"country": "Guyana", "code": "GUY", "region": "Americas", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "haiti": {"country": "Haiti", "code": "HTI", "region": "Americas", "score": 0.1, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "honduras": {"country": "Honduras", "code": "HND", "region": "Americas", "score": 2.7, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": true, "liability": true, "retaliation": false}, "jamaica": {"country": "Jamaica", "code": "JAM", "region": "Americas", "score": 3.4, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": true, "liability": true, "retaliation": true}, "mexico": {"country": "Mexico", "code": "MEX", "region": "Americas", "score": 2.0, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": false, "liability": true, "retaliation": false}, "nicaragua": {"country": "Nicaragua", "code": "NIC", "region": "Americas", "score": 2.7, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": false, "liability": false, "retaliation": true}, "panama": {"country": "Panama", "code": "PAN", "region": "Americas", "score": 4.2, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": true}, "paraguay": {"country": "Paraguay", "code": "PRY", "region": "Americas", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "peru": {"country": "Peru", "code": "PER", "region": "Americas", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "saint kitts and nevis": {"country": "Saint Kitts and Nevis", "code": "KNA", "region": "Americas", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "saint lucia": {"country": "Saint Lucia", "code": "LCA", "region": "Americas", "score": 2.1, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "saint vincent and the grenadines": {"country": "Saint Vincent and the Grenadines", "code": "VCT", "region": "Americas", "score": 3.6, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": true, "liability": false, "retaliation": true}, "suriname": {"country": "Suriname", "code": "SUR", "region": "Americas", "score": 3.6, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": false, "liability": false, "retaliation": true}, "trinidad and tobago": {"country": "Trinidad and Tobago", "code": "TTO", "region": "Americas", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "united states": {"country": "United States", "code": "USA", "region": "Americas", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "uruguay": {"country": "Uruguay", "code": "URY", "region": "Americas", "score": 2.7, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": true}, "venezuela": {"country": "Venezuela", "code": "VEN", "region": "Americas", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "albania": {"country": "Albania", "code": "ALB", "region": "Europe", "score": 3.5, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": true}, "andorra": {"country": "Andorra", "code": "AND", "region": "Europe", "score": 4.3, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": true}, "austria": {"country": "Austria", "code": "AUT", "region": "Europe", "score": 4.9, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "belarus": {"country": "Belarus", "code": "BLR", "region": "Europe", "score": 4.4, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": true}, "belgium": {"country": "Belgium", "code": "BEL", "region": "Europe", "score": 4.9, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "bosnia and herzegovina": {"country": "Bosnia and Herzegovina", "code": "BIH", "region": "Europe", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "bulgaria": {"country": "Bulgaria", "code": "BGR", "region": "Europe", "score": 0.1, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "croatia": {"country": "Croatia", "code": "HRV", "region": "Europe", "score": 4.3, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": false}, "cyprus": {"country": "Cyprus", "code": "CYP", "region": "Europe", "score": 4.3, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": false, "liability": true, "retaliation": true}, "czech republic": {"country": "Czech Republic", "code": "CZE", "region": "Europe", "score": 3.6, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": false, "liability": true, "retaliation": false}, "denmark": {"country": "Denmark", "code": "DNK", "region": "Europe", "score": 4.9, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "estonia": {"country": "Estonia", "code": "EST", "region": "Europe", "score": 4.2, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "finland": {"country": "Finland", "code": "FIN", "region": "Europe", "score": 4.9, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "france": {"country": "France", "code": "FRA", "region": "Europe", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "germany": {"country": "Germany", "code": "DEU", "region": "Europe", "score": 3.6, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": true, "liability": false, "retaliation": true}, "greece": {"country": "Greece", "code": "GRC", "region": "Europe", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "hungary": {"country": "Hungary", "code": "HUN", "region": "Europe", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "iceland": {"country": "Iceland", "code": "ISL", "region": "Europe", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "ireland": {"country": "Ireland", "code": "IRL", "region": "Europe", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "italy": {"country": "Italy", "code": "ITA", "region": "Europe", "score": 4.2, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": true}, "latvia": {"country": "Latvia", "code": "LVA", "region": "Europe", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "liechtenstein": {"country": "Liechtenstein", "code": "LIE", "region": "Europe", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "lithuania": {"country": "Lithuania", "code": "LTU", "region": "Europe", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "luxembourg": {"country": "Luxembourg", "code": "LUX", "region": "Europe", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "malta": {"country": "Malta", "code": "MLT", "region": "Europe", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "monaco": {"country": "Monaco", "code": "MCO", "region": "Europe", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "montenegro": {"country": "Montenegro", "code": "MNE", "region": "Europe", "score": 3.5, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": false, "liability": false, "retaliation": true}, "netherlands": {"country": "Netherlands", "code": "NLD", "region": "Europe", "score": 2.7, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": false, "liability": false, "retaliation": true}, "north macedonia": {"country": "North Macedonia", "code": "MKD", "region": "Europe", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "norway": {"country": "Norway", "code": "NOR", "region": "Europe", "score": 4.3, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": true, "liability": true, "retaliation": true}, "poland": {"country": "Poland", "code": "POL", "region": "Europe", "score": 4.3, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": true}, "portugal": {"country": "Portugal", "code": "PRT", "region": "Europe", "score": 2.6, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": false, "liability": true, "retaliation": true}, "republic of moldova": {"country": "Republic of Moldova", "code": "MDA", "region": "Europe", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "romania": {"country": "Romania", "code": "ROU", "region": "Europe", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "russian federation": {"country": "Russian Federation", "code": "RUS", "region": "Europe", "score": 2.7, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": true, "liability": false, "retaliation": true}, "san marino": {"country": "San Marino", "code": "SMR", "region": "Europe", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "serbia": {"country": "Serbia", "code": "SRB", "region": "Europe", "score": 3.4, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": false}, "slovakia": {"country": "Slovakia", "code": "SVK", "region": "Europe", "score": 4.3, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": false, "liability": true, "retaliation": true}, "slovenia": {"country": "Slovenia", "code": "SVN", "region": "Europe", "score": 3.6, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": false, "liability": false, "retaliation": true}, "spain": {"country": "Spain", "code": "ESP", "region": "Europe", "score": 4.2, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": true, "liability": true, "retaliation": true}, "sweden": {"country": "Sweden", "code": "SWE", "region": "Europe", "score": 4.2, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "switzerland": {"country": "Switzerland", "code": "CHE", "region": "Europe", "score": 4.2, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "ukraine": {"country": "Ukraine", "code": "UKR", "region": "Europe", "score": 2.0, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": false, "liability": false, "retaliation": false}, "united kingdom": {"country": "United Kingdom", "code": "GBR", "region": "Europe", "score": 4.3, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": false, "liability": true, "retaliation": true}, "afghanistan": {"country": "Afghanistan", "code": "AFG", "region": "Asia", "score": 1.2, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "armenia": {"country": "Armenia", "code": "ARM", "region": "Asia", "score": 0.1, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "azerbaijan": {"country": "Azerbaijan", "code": "AZE", "region": "Asia", "score": 4.2, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": true}, "bahrain": {"country": "Bahrain", "code": "BHR", "region": "Asia", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "bangladesh": {"country": "Bangladesh", "code": "BGD", "region": "Asia", "score": 2.9, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": false, "liability": false, "retaliation": false}, "bhutan": {"country": "Bhutan", "code": "BTN", "region": "Asia", "score": 3.4, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": false, "liability": true, "retaliation": true}, "brunei": {"country": "Brunei", "code": "BRN", "region": "Asia", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "cambodia": {"country": "Cambodia", "code": "KHM", "region": "Asia", "score": 2.8, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": false}, "china": {"country": "China", "code": "CHN", "region": "Asia", "score": 2.1, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": true, "liability": false, "retaliation": false}, "georgia": {"country": "Georgia", "code": "GEO", "region": "Asia", "score": 2.8, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": true, "liability": false, "retaliation": false}, "india": {"country": "India", "code": "IND", "region": "Asia", "score": 2.9, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": true, "liability": false, "retaliation": false}, "indonesia": {"country": "Indonesia", "code": "IDN", "region": "Asia", "score": 2.8, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": false, "liability": false, "retaliation": false}, "iran": {"country": "Iran", "code": "IRN", "region": "Asia", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "iraq": {"country": "Iraq", "code": "IRQ", "region": "Asia", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "israel": {"country": "Israel", "code": "ISR", "region": "Asia", "score": 4.4, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": false}, "japan": {"country": "Japan", "code": "JPN", "region": "Asia", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "jordan": {"country": "Jordan", "code": "JOR", "region": "Asia", "score": 3.4, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": false}, "kazakhstan": {"country": "Kazakhstan", "code": "KAZ", "region": "Asia", "score": 3.5, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": true}, "kuwait": {"country": "Kuwait", "code": "KWT", "region": "Asia", "score": 4.2, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": true, "liability": true, "retaliation": true}, "kyrgyzstan": {"country": "Kyrgyzstan", "code": "KGZ", "region": "Asia", "score": 3.5, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": true}, "laos": {"country": "Laos", "code": "LAO", "region": "Asia", "score": 2.8, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": false}, "lebanon": {"country": "Lebanon", "code": "LBN", "region": "Asia", "score": 0.1, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "malaysia": {"country": "Malaysia", "code": "MYS", "region": "Asia", "score": 3.6, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": true, "liability": true, "retaliation": false}, "maldives": {"country": "Maldives", "code": "MDV", "region": "Asia", "score": 3.4, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": false, "liability": true, "retaliation": true}, "mongolia": {"country": "Mongolia", "code": "MNG", "region": "Asia", "score": 3.5, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": false}, "myanmar": {"country": "Myanmar", "code": "MMR", "region": "Asia", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "nepal": {"country": "Nepal", "code": "NPL", "region": "Asia", "score": 3.6, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": true, "liability": true, "retaliation": false}, "north korea": {"country": "North Korea", "code": "PRK", "region": "Asia", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "oman": {"country": "Oman", "code": "OMN", "region": "Asia", "score": 3.6, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": true, "liability": true, "retaliation": false}, "pakistan": {"country": "Pakistan", "code": "PAK", "region": "Asia", "score": 2.0, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": true}, "philippines": {"country": "Philippines", "code": "PHL", "region": "Asia", "score": 2.8, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": false, "liability": true, "retaliation": false}, "qatar": {"country": "Qatar", "code": "QAT", "region": "Asia", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "republic of korea": {"country": "Republic of Korea", "code": "KOR", "region": "Asia", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "saudi arabia": {"country": "Saudi Arabia", "code": "SAU", "region": "Asia", "score": 4.9, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "singapore": {"country": "Singapore", "code": "SGP", "region": "Asia", "score": 4.3, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": false, "liability": true, "retaliation": true}, "sri lanka": {"country": "Sri Lanka", "code": "LKA", "region": "Asia", "score": 2.1, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "syria": {"country": "Syria", "code": "SYR", "region": "Asia", "score": 0.1, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "tajikistan": {"country": "Tajikistan", "code": "TJK", "region": "Asia", "score": 2.7, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": false, "liability": true, "retaliation": true}, "thailand": {"country": "Thailand", "code": "THA", "region": "Asia", "score": 3.6, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": true, "liability": false, "retaliation": true}, "timor-leste": {"country": "Timor-Leste", "code": "TLS", "region": "Asia", "score": 3.5, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": false, "liability": false, "retaliation": true}, "turkey": {"country": "Turkey", "code": "TUR", "region": "Asia", "score": 3.5, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": false, "liability": false, "retaliation": true}, "turkmenistan": {"country": "Turkmenistan", "code": "TKM", "region": "Asia", "score": 0.1, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "united arab emirates": {"country": "United Arab Emirates", "code": "ARE", "region": "Asia", "score": 4.3, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": false, "liability": true, "retaliation": true}, "uzbekistan": {"country": "Uzbekistan", "code": "UZB", "region": "Asia", "score": 4.3, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": true}, "vietnam": {"country": "Vietnam", "code": "VNM", "region": "Asia", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "yemen": {"country": "Yemen", "code": "YEM", "region": "Asia", "score": 1.3, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "algeria": {"country": "Algeria", "code": "DZA", "region": "Africa", "score": 3.4, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": true, "liability": true, "retaliation": true}, "angola": {"country": "Angola", "code": "AGO", "region": "Africa", "score": 1.9, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": true}, "benin": {"country": "Benin", "code": "BEN", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "botswana": {"country": "Botswana", "code": "BWA", "region": "Africa", "score": 3.6, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": false, "liability": false, "retaliation": true}, "burkina faso": {"country": "Burkina Faso", "code": "BFA", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "burundi": {"country": "Burundi", "code": "BDI", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "cabo verde": {"country": "Cabo Verde", "code": "CPV", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "cameroon": {"country": "Cameroon", "code": "CMR", "region": "Africa", "score": 1.9, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": true}, "central african republic": {"country": "Central African Republic", "code": "CAF", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "chad": {"country": "Chad", "code": "TCD", "region": "Africa", "score": 1.9, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": true}, "comoros": {"country": "Comoros", "code": "COM", "region": "Africa", "score": 4.4, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": false}, "congo": {"country": "Congo", "code": "COG", "region": "Africa", "score": 2.1, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "cote d'ivoire": {"country": "Cote d'Ivoire", "code": "CIV", "region": "Africa", "score": 1.2, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "democratic republic of the congo": {"country": "Democratic Republic of the Congo", "code": "COD", "region": "Africa", "score": 0.1, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "djibouti": {"country": "Djibouti", "code": "DJI", "region": "Africa", "score": 3.5, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": false}, "egypt": {"country": "Egypt", "code": "EGY", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "equatorial guinea": {"country": "Equatorial Guinea", "code": "GNQ", "region": "Africa", "score": 4.4, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": true}, "eritrea": {"country": "Eritrea", "code": "ERI", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "eswatini": {"country": "Eswatini", "code": "SWZ", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "ethiopia": {"country": "Ethiopia", "code": "ETH", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "gabon": {"country": "Gabon", "code": "GAB", "region": "Africa", "score": 4.3, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": true}, "gambia": {"country": "Gambia", "code": "GMB", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "ghana": {"country": "Ghana", "code": "GHA", "region": "Africa", "score": 2.8, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": true}, "guinea": {"country": "Guinea", "code": "GIN", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "guinea-bissau": {"country": "Guinea-Bissau", "code": "GNB", "region": "Africa", "score": 1.3, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "kenya": {"country": "Kenya", "code": "KEN", "region": "Africa", "score": 4.2, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": true, "liability": true, "retaliation": true}, "lesotho": {"country": "Lesotho", "code": "LSO", "region": "Africa", "score": 2.8, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": false, "liability": true, "retaliation": false}, "liberia": {"country": "Liberia", "code": "LBR", "region": "Africa", "score": 0.1, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "libya": {"country": "Libya", "code": "LBY", "region": "Africa", "score": 2.2, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "madagascar": {"country": "Madagascar", "code": "MDG", "region": "Africa", "score": 1.9, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": true}, "malawi": {"country": "Malawi", "code": "MWI", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "mali": {"country": "Mali", "code": "MLI", "region": "Africa", "score": 2.0, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": false, "liability": false, "retaliation": false}, "mauritania": {"country": "Mauritania", "code": "MRT", "region": "Africa", "score": 3.6, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": true, "liability": false, "retaliation": true}, "mauritius": {"country": "Mauritius", "code": "MUS", "region": "Africa", "score": 3.6, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": false}, "morocco": {"country": "Morocco", "code": "MAR", "region": "Africa", "score": 1.3, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "mozambique": {"country": "Mozambique", "code": "MOZ", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "namibia": {"country": "Namibia", "code": "NAM", "region": "Africa", "score": 3.4, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": true, "liability": true, "retaliation": true}, "niger": {"country": "Niger", "code": "NER", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "nigeria": {"country": "Nigeria", "code": "NGA", "region": "Africa", "score": 1.9, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": false, "liability": false, "retaliation": false}, "rwanda": {"country": "Rwanda", "code": "RWA", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "sao tome and principe": {"country": "Sao Tome and Principe", "code": "STP", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "senegal": {"country": "Senegal", "code": "SEN", "region": "Africa", "score": 2.9, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": true, "liability": false, "retaliation": false}, "seychelles": {"country": "Seychelles", "code": "SYC", "region": "Africa", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "sierra leone": {"country": "Sierra Leone", "code": "SLE", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "somalia": {"country": "Somalia", "code": "SOM", "region": "Africa", "score": 0.1, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "south africa": {"country": "South Africa", "code": "ZAF", "region": "Africa", "score": 4.2, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": true}, "south sudan": {"country": "South Sudan", "code": "SSD", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "sudan": {"country": "Sudan", "code": "SDN", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "togo": {"country": "Togo", "code": "TGO", "region": "Africa", "score": 2.0, "prohibited": true, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": true}, "tunisia": {"country": "Tunisia", "code": "TUN", "region": "Africa", "score": 4.2, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": false, "liability": true, "retaliation": true}, "uganda": {"country": "Uganda", "code": "UGA", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "united republic of tanzania": {"country": "United Republic of Tanzania", "code": "TZA", "region": "Africa", "score": 0.1, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "zambia": {"country": "Zambia", "code": "ZMB", "region": "Africa", "score": 2.7, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": false, "liability": false, "retaliation": true}, "zimbabwe": {"country": "Zimbabwe", "code": "ZWE", "region": "Africa", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "australia": {"country": "Australia", "code": "AUS", "region": "Oceania", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "fiji": {"country": "Fiji", "code": "FJI", "region": "Oceania", "score": 2.7, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": false}, "kiribati": {"country": "Kiribati", "code": "KIR", "region": "Oceania", "score": 2.7, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": false}, "marshall islands": {"country": "Marshall Islands", "code": "MHL", "region": "Oceania", "score": 3.6, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": false, "liability": true, "retaliation": false}, "micronesia": {"country": "Micronesia", "code": "FSM", "region": "Oceania", "score": 0.0, "prohibited": false, "workers": false, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": false}, "nauru": {"country": "Nauru", "code": "NRU", "region": "Oceania", "score": 5.0, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "new zealand": {"country": "New Zealand", "code": "NZL", "region": "Oceania", "score": 4.2, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": true, "liability": true, "retaliation": true}, "palau": {"country": "Palau", "code": "PLW", "region": "Oceania", "score": 4.3, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": true, "liability": true, "retaliation": true}, "papua new guinea": {"country": "Papua New Guinea", "code": "PNG", "region": "Oceania", "score": 2.8, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": true, "liability": false, "retaliation": false}, "samoa": {"country": "Samoa", "code": "WSM", "region": "Oceania", "score": 4.3, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": true, "liability": false, "retaliation": true}, "solomon islands": {"country": "Solomon Islands", "code": "SLB", "region": "Oceania", "score": 2.8, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": false, "liability": false, "retaliation": true}, "tonga": {"country": "Tonga", "code": "TON", "region": "Oceania", "score": 2.8, "prohibited": true, "workers": true, "perpetrators": true, "responsibility": false, "liability": false, "retaliation": false}, "tuvalu": {"country": "Tuvalu", "code": "TUV", "region": "Oceania", "score": 4.1, "prohibited": true, "workers": false, "perpetrators": true, "responsibility": true, "liability": true, "retaliation": true}, "vanuatu": {"country": "Vanuatu", "code": "VUT", "region": "Oceania", "score": 2.8, "prohibited": true, "workers": true, "perpetrators": false, "responsibility": false, "liability": true, "retaliation": false}};
+
+        let selectedIndustryIndex = null;
+        let activeMinYear = 1997;
+        let activeMaxYear = 2023;
+
+        // ISO Alpha-3 to Alpha-2 for Flag Generation
+        const alpha3To2 = {
+            'USA':'US','GBR':'GB','IND':'IN','CAN':'CA','AUS':'AU','FRA':'FR','DEU':'DE',
+            'JPN':'JP','CHN':'CN','BRA':'BR','ZAF':'ZA','MEX':'MX','NGA':'NG','EGY':'EG',
+            'KEN':'KE','ITA':'IT','ESP':'ES','RUS':'RU','KOR':'KR','SAU':'SA','TUR':'TR',
+            'IDN':'ID','ARG':'AR','COL':'CO','PAK':'PK','BGD':'BD','VNM':'VN','PHL':'PH',
+            'NLD':'NL','SWE':'SE','CHE':'CH','POL':'PL','BEL':'BE','NOR':'NO','AUT':'AT',
+            'ISR':'IL','SGP':'SG','NZL':'NZ','IRL':'IE','DNK':'DK','FIN':'FI','PRT':'PT',
+            'GRC':'GR','CZE':'CZ','ROU':'RO','CHL':'CL','PER':'PE','UKR':'UA','MYS':'MY',
+            'THA':'TH','ARE':'AE','QAT':'QA','KWT':'KW','OMN':'OM','MAR':'MA','DZA':'DZ'
+        };
+
+        function getFlagEmoji(code) {
+            if (!code) return '🌐';
+            let c2 = code.length === 2 ? code : alpha3To2[code.toUpperCase()];
+            if (!c2) c2 = code.slice(0, 2);
+            return c2.toUpperCase().replace(/./g, char => String.fromCodePoint(127397 + char.charCodeAt(0)));
+        }
 
         // Formatting utilities
         function formatNumber(num) {
-            return Number(num).toLocaleString('en-US');
-        }
-        function formatPercent(num) {
-            return Number(num).toFixed(1) + '%';
+            return Number(num || 0).toLocaleString('en-US');
         }
 
-        // Animated counter rollup
+        function formatPercent(num) {
+            return Number(num || 0).toFixed(1) + '%';
+        }
+
+        // Counter Rollup Animation (1.5 seconds)
         function animateCounter(elementId, targetValue, durationMs = 1500, isPercent = false) {
             const el = document.getElementById(elementId);
             if (!el) return;
@@ -771,7 +1521,6 @@
             function update(time) {
                 const elapsed = time - startTime;
                 const progress = Math.min(elapsed / durationMs, 1);
-                // Ease out cubic curve
                 const easeOut = 1 - Math.pow(1 - progress, 3);
                 const current = startVal + (targetValue - startVal) * easeOut;
 
@@ -790,54 +1539,43 @@
             requestAnimationFrame(update);
         }
 
-        // Theme management
+        // Theme Toggle
         const themeBtn = document.getElementById('btnThemeToggle');
         const themeIcon = document.getElementById('themeIcon');
         themeBtn.addEventListener('click', () => {
             document.body.classList.toggle('light-theme');
             const isLight = document.body.classList.contains('light-theme');
             themeIcon.innerText = isLight ? '☀️' : '🌙';
-            updateChartsTheme(isLight);
+            updateChartsTheme();
         });
 
-        function updateChartsTheme(isLight) {
-            const textColor = isLight ? '#0f172a' : '#f8fafc';
+        function updateChartsTheme() {
+            const isLight = document.body.classList.contains('light-theme');
+            const tickColor = isLight ? '#475569' : '#94a3b8';
             const gridColor = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.07)';
 
             [industriesChartInstance, yearlyChartInstance, raceChartInstance, regionsChartInstance].forEach(chart => {
-                if (chart) {
-                    if (chart.options.scales.x) {
-                        chart.options.scales.x.ticks.color = textColor;
-                        chart.options.scales.x.grid.color = gridColor;
-                    }
-                    if (chart.options.scales.y) {
-                        chart.options.scales.y.ticks.color = textColor;
-                        chart.options.scales.y.grid.color = gridColor;
-                    }
-                    if (chart.options.plugins.legend) {
-                        chart.options.plugins.legend.labels.color = textColor;
-                    }
+                if (chart && chart.options.scales) {
+                    if (chart.options.scales.x && chart.options.scales.x.ticks) chart.options.scales.x.ticks.color = tickColor;
+                    if (chart.options.scales.x && chart.options.scales.x.grid) chart.options.scales.x.grid.color = gridColor;
+                    if (chart.options.scales.y && chart.options.scales.y.ticks) chart.options.scales.y.ticks.color = tickColor;
+                    if (chart.options.scales.y && chart.options.scales.y.grid) chart.options.scales.y.grid.color = gridColor;
                     chart.update();
                 }
             });
-
-            if (sexChartInstance && sexChartInstance.options.plugins.legend) {
-                sexChartInstance.options.plugins.legend.labels.color = textColor;
-                sexChartInstance.update();
-            }
         }
 
-        // Export Chart as PNG
+        // Download Chart as PNG
         function downloadChartAsPNG(canvasId, fileName) {
             const canvas = document.getElementById(canvasId);
             if (!canvas) return;
-            const a = document.createElement('a');
-            a.download = fileName || 'chart.png';
-            a.href = canvas.toDataURL('image/png');
-            a.click();
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
         }
 
-        // 1. Fetch Summary & Update KPIs
+        // 1. Load Summary & KPIs
         async function loadSummary() {
             try {
                 const res = await fetch('/api/summary');
@@ -853,7 +1591,7 @@
                     updatePipelineBadges(data.pipeline_status);
                 }
             } catch (err) {
-                console.error('[Summary] Error fetching /api/summary:', err);
+                console.error('[Summary] Error fetching summary:', err);
                 document.getElementById('kpiTotalCharges').innerText = '195,000';
                 document.getElementById('kpiFemalePercentage').innerText = '83.1%';
                 document.getElementById('kpiCountries').innerText = '193';
@@ -879,16 +1617,16 @@
             }
         }
 
-        // 2. Load Industries Chart
+        // 2. Load Industries Chart (With FEATURE 1 Click-to-Filter & Side Panel)
         async function loadIndustries() {
             try {
                 const res = await fetch('/api/industries');
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const raw = await res.json();
-                const list = raw.value || raw || [];
+                fullIndustriesData = raw.value || raw || [];
 
-                const labels = list.map(i => i.industry || i.naics_description);
-                const data = list.map(i => i.count || i.charge_count);
+                const labels = fullIndustriesData.map(i => i.industry || i.naics_description);
+                const data = fullIndustriesData.map(i => i.count || i.charge_count);
 
                 const ctx = document.getElementById('industriesChart').getContext('2d');
                 if (industriesChartInstance) {
@@ -898,7 +1636,6 @@
                     return;
                 }
 
-                // Gradient purple to pink
                 const gradient = ctx.createLinearGradient(0, 0, 400, 0);
                 gradient.addColorStop(0, '#a855f7');
                 gradient.addColorStop(1, '#ec4899');
@@ -912,18 +1649,30 @@
                             data: data,
                             backgroundColor: gradient,
                             borderRadius: 6,
-                            barPercentage: 0.75
+                            barPercentage: 0.75,
+                            borderWidth: labels.map((_, i) => i === selectedIndustryIndex ? 3 : 0),
+                            borderColor: labels.map((_, i) => i === selectedIndustryIndex ? '#ffffff' : 'transparent')
                         }]
                     },
                     options: {
                         indexAxis: 'y',
                         responsive: true,
                         maintainAspectRatio: false,
+                        onClick: (event, elements) => {
+                            if (elements && elements.length > 0) {
+                                const idx = elements[0].index;
+                                if (selectedIndustryIndex === idx) {
+                                    clearIndustryFilter();
+                                } else {
+                                    selectIndustry(idx);
+                                }
+                            }
+                        },
                         plugins: {
                             legend: { display: false },
                             tooltip: {
                                 callbacks: {
-                                    label: (ctx) => ` Charges: ${ctx.raw.toLocaleString()}`
+                                    label: (ctx) => ` Charges: ${ctx.raw.toLocaleString()} (Click to filter)`
                                 }
                             }
                         },
@@ -944,6 +1693,58 @@
             }
         }
 
+        // Feature 1: Select Industry, open side panel & show filter chip
+        function selectIndustry(index) {
+            selectedIndustryIndex = index;
+            const ind = fullIndustriesData[index];
+            if (!ind) return;
+
+            const name = ind.industry || ind.naics_description || 'Unknown Industry';
+            const count = ind.count || ind.charge_count || 0;
+            const total = fullIndustriesData.reduce((acc, cur) => acc + (cur.count || cur.charge_count || 0), 0) || 195000;
+            const pct = ((count / total) * 100).toFixed(1) + '%';
+
+            // Update Chart Border
+            if (industriesChartInstance) {
+                const countBars = industriesChartInstance.data.labels.length;
+                industriesChartInstance.data.datasets[0].borderWidth = Array(countBars).fill(0);
+                industriesChartInstance.data.datasets[0].borderColor = Array(countBars).fill('transparent');
+                industriesChartInstance.data.datasets[0].borderWidth[index] = 3;
+                industriesChartInstance.data.datasets[0].borderColor[index] = '#ffffff';
+                industriesChartInstance.update();
+            }
+
+            // Show Filter Chip at top
+            const filterBar = document.getElementById('filterBar');
+            const chipText = document.getElementById('filterChipText');
+            filterBar.style.display = 'flex';
+            chipText.innerText = `${name} (${pct})`;
+
+            // Open Side Drawer
+            document.getElementById('indPanelTitle').innerText = name;
+            document.getElementById('indPanelCharges').innerText = formatNumber(count);
+            document.getElementById('indPanelRank').innerText = `#${index + 1} of 10`;
+            document.getElementById('indPanelPercent').innerText = pct;
+            document.getElementById('indFact1').innerText = `${name} accounts for ${formatNumber(count)} harassment charge filings.`;
+
+            openDrawer('industrySidePanel');
+        }
+
+        function clearIndustryFilter() {
+            selectedIndustryIndex = null;
+            document.getElementById('filterBar').style.display = 'none';
+            if (industriesChartInstance) {
+                const countBars = industriesChartInstance.data.labels.length;
+                industriesChartInstance.data.datasets[0].borderWidth = Array(countBars).fill(0);
+                industriesChartInstance.data.datasets[0].borderColor = Array(countBars).fill('transparent');
+                industriesChartInstance.update();
+            }
+            closeDrawer('industrySidePanel');
+        }
+
+        document.getElementById('clearFilterChipBtn').addEventListener('click', clearIndustryFilter);
+        document.getElementById('closeIndPanelBtn').addEventListener('click', () => closeDrawer('industrySidePanel'));
+
         // 3. Load Sex Distribution Chart
         async function loadSex() {
             try {
@@ -952,7 +1753,7 @@
                 const raw = await res.json();
                 const list = raw.value || raw || [];
 
-                const labels = list.map(s => s.sex || s.cp_sex);
+                const labels = list.map(s => s.sex || s.gender);
                 const data = list.map(s => s.count || s.charge_count);
 
                 const ctx = document.getElementById('sexChart').getContext('2d');
@@ -970,29 +1771,25 @@
                         datasets: [{
                             data: data,
                             backgroundColor: ['#ec4899', '#8b5cf6'],
-                            borderColor: 'transparent',
-                            hoverOffset: 12
+                            borderWidth: 0,
+                            hoverOffset: 6
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        cutout: '68%',
                         plugins: {
                             legend: {
                                 position: 'bottom',
-                                labels: { color: '#f8fafc', font: { size: 12, weight: '600' }, padding: 18 }
+                                labels: { color: '#f8fafc', font: { size: 12, weight: '600' } }
                             },
                             tooltip: {
                                 callbacks: {
-                                    label: (ctx) => {
-                                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                                        const pct = ((ctx.raw / total) * 100).toFixed(1);
-                                        return ` ${ctx.label}: ${ctx.raw.toLocaleString()} (${pct}%)`;
-                                    }
+                                    label: (ctx) => ` ${ctx.label}: ${ctx.raw.toLocaleString()} charges`
                                 }
                             }
-                        }
+                        },
+                        cutout: '72%'
                     }
                 });
             } catch (err) {
@@ -1000,74 +1797,129 @@
             }
         }
 
-        // 4. Load Yearly Trend Chart
+        // 4. Load Yearly Trend Chart (With FEATURE 4 Dual Slider)
         async function loadYearly() {
             try {
                 const res = await fetch('/api/yearly');
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const raw = await res.json();
-                const list = raw.value || raw || [];
+                fullYearlyData = raw.value || raw || [];
+                // Sort ascending by year
+                fullYearlyData.sort((a, b) => (a.year || a.filing_year) - (b.year || b.filing_year));
 
-                const labels = list.map(y => y.year);
-                const data = list.map(y => y.count || y.charge_count);
-
-                const ctx = document.getElementById('yearlyChart').getContext('2d');
-                if (yearlyChartInstance) {
-                    yearlyChartInstance.data.labels = labels;
-                    yearlyChartInstance.data.datasets[0].data = data;
-                    yearlyChartInstance.update();
-                    return;
-                }
-
-                const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-                gradient.addColorStop(0, 'rgba(168, 85, 247, 0.45)');
-                gradient.addColorStop(1, 'rgba(168, 85, 247, 0.0)');
-
-                yearlyChartInstance = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Filings',
-                            data: data,
-                            borderColor: '#c084fc',
-                            borderWidth: 3,
-                            fill: true,
-                            backgroundColor: gradient,
-                            tension: 0.35,
-                            pointBackgroundColor: '#ec4899',
-                            pointHoverRadius: 6
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: (ctx) => ` Charges: ${ctx.raw.toLocaleString()}`
-                                }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                grid: { color: 'rgba(255,255,255,0.06)' },
-                                ticks: { color: '#94a3b8', maxTicksLimit: 14 }
-                            },
-                            y: {
-                                grid: { color: 'rgba(255,255,255,0.06)' },
-                                ticks: { color: '#94a3b8' }
-                            }
-                        }
-                    }
-                });
+                updateYearlyChart(activeMinYear, activeMaxYear);
             } catch (err) {
                 console.error('[Yearly] Error loading chart:', err);
             }
         }
 
-        // 5. Load Race Chart
+        function updateYearlyChart(minYear, maxYear) {
+            const filtered = fullYearlyData.filter(y => {
+                const yr = Number(y.year || y.filing_year);
+                return yr >= minYear && yr <= maxYear;
+            });
+
+            const labels = filtered.map(y => y.year || y.filing_year);
+            const data = filtered.map(y => y.count || y.charge_count);
+            const rangeSum = data.reduce((a, b) => a + b, 0);
+
+            // Update badge labels
+            document.getElementById('yearRangeLabel').innerText = `Selected: ${minYear} → ${maxYear}`;
+            document.getElementById('yearRangeCharges').innerText = `${formatNumber(rangeSum)} charges in window`;
+
+            const ctx = document.getElementById('yearlyChart').getContext('2d');
+            if (yearlyChartInstance) {
+                yearlyChartInstance.data.labels = labels;
+                yearlyChartInstance.data.datasets[0].data = data;
+                yearlyChartInstance.update();
+                return;
+            }
+
+            const areaGrad = ctx.createLinearGradient(0, 0, 0, 240);
+            areaGrad.addColorStop(0, 'rgba(168, 85, 247, 0.45)');
+            areaGrad.addColorStop(1, 'rgba(168, 85, 247, 0.0)');
+
+            yearlyChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Charges',
+                        data: data,
+                        borderColor: '#a855f7',
+                        borderWidth: 2.5,
+                        backgroundColor: areaGrad,
+                        fill: true,
+                        tension: 0.35,
+                        pointBackgroundColor: '#ec4899',
+                        pointBorderColor: '#ffffff',
+                        pointHoverRadius: 6,
+                        pointRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` FY ${ctx.label}: ${ctx.raw.toLocaleString()} charges`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.06)' },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.06)' },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Feature 4: Dual Range Slider Setup
+        const sliderMin = document.getElementById('sliderYearMin');
+        const sliderMax = document.getElementById('sliderYearMax');
+        const rangeFill = document.getElementById('sliderRangeFill');
+
+        function updateSliderVisual() {
+            let minVal = parseInt(sliderMin.value);
+            let maxVal = parseInt(sliderMax.value);
+
+            if (minVal > maxVal) {
+                const temp = minVal;
+                minVal = maxVal;
+                maxVal = temp;
+            }
+
+            activeMinYear = minVal;
+            activeMaxYear = maxVal;
+
+            const totalSpan = 2023 - 1997;
+            const leftPct = ((minVal - 1997) / totalSpan) * 100;
+            const widthPct = ((maxVal - minVal) / totalSpan) * 100;
+
+            rangeFill.style.left = leftPct + '%';
+            rangeFill.style.width = widthPct + '%';
+
+            updateYearlyChart(minVal, maxVal);
+        }
+
+        sliderMin.addEventListener('input', updateSliderVisual);
+        sliderMax.addEventListener('input', updateSliderVisual);
+
+        document.getElementById('btnResetYearRange').addEventListener('click', () => {
+            sliderMin.value = 1997;
+            sliderMax.value = 2023;
+            updateSliderVisual();
+        });
+
+        // 5. Load Race Distribution Chart
         async function loadRace() {
             try {
                 const res = await fetch('/api/race');
@@ -1075,10 +1927,8 @@
                 const raw = await res.json();
                 const list = raw.value || raw || [];
 
-                const labels = list.map(r => r.race || r.cp_race);
+                const labels = list.map(r => r.race || r.racial_group);
                 const data = list.map(r => r.count || r.charge_count);
-
-                const colors = ['#a855f7', '#38bdf8', '#34d399', '#fbbf24', '#f43f5e'];
 
                 const ctx = document.getElementById('raceChart').getContext('2d');
                 if (raceChartInstance) {
@@ -1088,6 +1938,7 @@
                     return;
                 }
 
+                const colors = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
                 raceChartInstance = new Chart(ctx, {
                     type: 'bar',
                     data: {
@@ -1096,7 +1947,7 @@
                             label: 'Charges',
                             data: data,
                             backgroundColor: colors,
-                            borderRadius: 8,
+                            borderRadius: 6,
                             barPercentage: 0.65
                         }]
                     },
@@ -1107,17 +1958,17 @@
                             legend: { display: false },
                             tooltip: {
                                 callbacks: {
-                                    label: (ctx) => ` Charges: ${ctx.raw.toLocaleString()}`
+                                    label: (ctx) => ` ${ctx.label}: ${ctx.raw.toLocaleString()} charges`
                                 }
                             }
                         },
                         scales: {
                             x: {
                                 grid: { display: false },
-                                ticks: { color: '#f8fafc', font: { weight: '600' } }
+                                ticks: { color: '#f8fafc', font: { weight: '600', size: 11 } }
                             },
                             y: {
-                                grid: { color: 'rgba(255,255,255,0.06)' },
+                                grid: { color: 'rgba(255,255,255,0.07)' },
                                 ticks: { color: '#94a3b8' }
                             }
                         }
@@ -1128,7 +1979,7 @@
             }
         }
 
-        // 6. Load Regions Chart
+        // 6. Load Regional Protection Scores Chart
         async function loadRegions() {
             try {
                 const res = await fetch('/api/regions');
@@ -1137,22 +1988,21 @@
                 const list = raw.value || raw || [];
 
                 const labels = list.map(r => r.region);
-                const scores = list.map(r => r.avg_protection_score);
+                const data = list.map(r => Number(r.avg_protection_score || r.protection_score || 0).toFixed(1));
 
-                // Color code by score
-                const barColors = scores.map(s => {
-                    if (s < 2.0) return '#ef4444'; // Red
-                    if (s < 3.0) return '#f97316'; // Orange
-                    if (s < 3.5) return '#fbbf24'; // Yellow
-                    if (s < 4.0) return '#2dd4bf'; // Teal
-                    return '#10b981';             // Green
+                const colors = data.map(score => {
+                    const s = parseFloat(score);
+                    if (s < 2.0) return '#ef4444';
+                    if (s < 3.0) return '#f97316';
+                    if (s < 4.0) return '#fbbf24';
+                    return '#10b981';
                 });
 
                 const ctx = document.getElementById('regionsChart').getContext('2d');
                 if (regionsChartInstance) {
                     regionsChartInstance.data.labels = labels;
-                    regionsChartInstance.data.datasets[0].data = scores;
-                    regionsChartInstance.data.datasets[0].backgroundColor = barColors;
+                    regionsChartInstance.data.datasets[0].data = data;
+                    regionsChartInstance.data.datasets[0].backgroundColor = colors;
                     regionsChartInstance.update();
                     return;
                 }
@@ -1162,11 +2012,11 @@
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: 'Avg Protection Score',
-                            data: scores,
-                            backgroundColor: barColors,
-                            borderRadius: 8,
-                            barPercentage: 0.5
+                            label: 'Protection Score',
+                            data: data,
+                            backgroundColor: colors,
+                            borderRadius: 6,
+                            barPercentage: 0.55
                         }]
                     },
                     options: {
@@ -1176,19 +2026,19 @@
                             legend: { display: false },
                             tooltip: {
                                 callbacks: {
-                                    label: (ctx) => ` Score: ${Number(ctx.raw).toFixed(2)} / 5.0`
+                                    label: (ctx) => ` Protection Score: ${ctx.raw} / 5.0`
                                 }
                             }
                         },
                         scales: {
                             x: {
                                 grid: { display: false },
-                                ticks: { color: '#f8fafc', font: { weight: '600', size: 12 } }
+                                ticks: { color: '#f8fafc', font: { weight: '600' } }
                             },
                             y: {
                                 min: 0,
                                 max: 5.0,
-                                grid: { color: 'rgba(255,255,255,0.06)' },
+                                grid: { color: 'rgba(255,255,255,0.07)' },
                                 ticks: { color: '#94a3b8' }
                             }
                         }
@@ -1199,13 +2049,14 @@
             }
         }
 
-        // 7. Load World Map & Countries
+        // 7. World Map & FEATURE 2 Country Detail Modal
         function getMapColor(score) {
             if (score === undefined || score === null) return '#334155';
-            if (score <= 1.5) return '#7f1d1d';
-            if (score <= 2.5) return '#dc2626';
-            if (score <= 3.5) return '#f97316';
-            if (score <= 4.5) return '#fbbf24';
+            const s = Number(score);
+            if (s <= 1.5) return '#7f1d1d';
+            if (s <= 2.5) return '#dc2626';
+            if (s <= 3.5) return '#f97316';
+            if (s <= 4.5) return '#fbbf24';
             return '#10b981';
         }
 
@@ -1219,7 +2070,7 @@
                     attributionControl: false
                 });
 
-                // Custom Dark Tiles
+                // Clean Esri Dark Canvas (No Watermark)
                 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
                     maxZoom: 16
                 }).addTo(leafletMap);
@@ -1244,18 +2095,18 @@
                 const res = await fetch('/api/countries');
                 if (res.ok) {
                     const list = await res.json();
-                    countriesDataMap = {};
+                    countriesScoreMap = {};
                     list.forEach(c => {
                         if (c.country) {
-                            countriesDataMap[c.country.trim().toLowerCase()] = c.score;
+                            countriesScoreMap[c.country.trim().toLowerCase()] = c.score;
                         }
                     });
                 }
             } catch (e) {
-                console.warn('[Map] Could not fetch countries, using defaults:', e);
+                console.warn('[Map] Using fallback score map:', e);
             }
 
-            // Load GeoJSON (Local static fallback or GitHub)
+            // Load GeoJSON
             try {
                 let geoRes = await fetch('/world.geojson');
                 if (!geoRes.ok) {
@@ -1270,13 +2121,12 @@
                 geojsonLayer = L.geoJSON(geoData, {
                     style: function(feature) {
                         const name = (feature.properties.name || '').toLowerCase();
-                        let score = countriesDataMap[name];
-                        // Fuzzy aliases
+                        let score = countriesScoreMap[name];
                         if (score === undefined) {
-                            if (name.includes('united states') || name === 'usa') score = countriesDataMap['united states'];
-                            else if (name.includes('kingdom') || name === 'uk') score = countriesDataMap['united kingdom'];
-                            else if (name.includes('russia')) score = countriesDataMap['russia'];
-                            else if (name.includes('korea')) score = countriesDataMap['south korea'];
+                            if (name.includes('united states') || name === 'usa') score = countriesScoreMap['united states'];
+                            else if (name.includes('kingdom') || name === 'uk') score = countriesScoreMap['united kingdom'];
+                            else if (name.includes('russia')) score = countriesScoreMap['russia'];
+                            else if (name.includes('korea')) score = countriesScoreMap['south korea'];
                         }
 
                         return {
@@ -1290,21 +2140,21 @@
                     onEachFeature: function(feature, layer) {
                         const name = feature.properties.name || 'Unknown';
                         const lower = name.toLowerCase();
-                        let score = countriesDataMap[lower];
+                        let score = countriesScoreMap[lower];
                         if (score === undefined) {
-                            if (lower.includes('united states')) score = countriesDataMap['united states'];
-                            else if (lower.includes('kingdom')) score = countriesDataMap['united kingdom'];
+                            if (lower.includes('united states')) score = countriesScoreMap['united states'];
+                            else if (lower.includes('kingdom')) score = countriesScoreMap['united kingdom'];
                         }
 
                         const scoreText = (score !== undefined) ? Number(score).toFixed(1) + ' / 5.0' : 'Data Pending';
-                        layer.bindTooltip(`<strong>Country:</strong> ${name}<br><strong>Protection Score:</strong> ${scoreText}`, {
+                        layer.bindTooltip(`<strong>${name}</strong><br>Score: ${scoreText}<br><em>Click for full legal profile</em>`, {
                             sticky: true,
                             className: 'map-legend'
                         });
 
                         layer.on('mouseover', function() {
                             this.setStyle({
-                                weight: 2,
+                                weight: 2.5,
                                 color: '#a855f7',
                                 fillOpacity: 0.95
                             });
@@ -1312,120 +2162,303 @@
                         layer.on('mouseout', function() {
                             geojsonLayer.resetStyle(this);
                         });
+                        // Feature 2: Open Country Modal on click
+                        layer.on('click', function() {
+                            openCountryModal(name);
+                        });
                     }
                 }).addTo(leafletMap);
-
             } catch (err) {
-                console.error('[Map] Error rendering GeoJSON layer:', err);
+                console.error('[Map] Error rendering GeoJSON:', err);
             }
         }
 
-        // 8. Load Alerts & Populate Company Registry Table
+        // Feature 2: Open Country Detail Modal
+        function openCountryModal(countryName) {
+            const lower = (countryName || '').trim().toLowerCase();
+            let profile = embeddedLegalMap[lower];
+
+            // Fuzzy lookup
+            if (!profile) {
+                if (lower.includes('united states') || lower === 'usa') profile = embeddedLegalMap['united states'];
+                else if (lower.includes('kingdom') || lower === 'uk') profile = embeddedLegalMap['united kingdom'];
+                else if (lower.includes('russia')) profile = embeddedLegalMap['russia'];
+                else if (lower.includes('korea')) profile = embeddedLegalMap['south korea'];
+            }
+
+            const displayName = profile ? profile.country : countryName;
+            const code = profile ? profile.code : '';
+            const region = profile ? profile.region : 'Global Framework';
+            const score = (profile ? profile.score : (countriesScoreMap[lower] || 3.2)).toFixed(1);
+
+            document.getElementById('countryFlagEmoji').innerText = getFlagEmoji(code);
+            document.getElementById('countryModalName').innerText = displayName;
+            document.getElementById('countryModalRegion').innerText = region;
+
+            const scoreEl = document.getElementById('countryModalScore');
+            scoreEl.innerHTML = `${score} <span style="font-size: 16px; color: var(--text-muted);">/ 5.0</span>`;
+            const sNum = parseFloat(score);
+            if (sNum <= 1.5) scoreEl.style.color = '#ef4444';
+            else if (sNum <= 2.5) scoreEl.style.color = '#f97316';
+            else if (sNum <= 3.5) scoreEl.style.color = '#fbbf24';
+            else scoreEl.style.color = '#10b981';
+
+            // 6 Legal Indicators
+            const isPass = (val) => val === true;
+            updateIndicatorRow('indProhibited', profile ? isPass(profile.prohibited) : sNum >= 2.0);
+            updateIndicatorRow('indWorkers', profile ? isPass(profile.workers) : sNum >= 2.5);
+            updateIndicatorRow('indPerpetrators', profile ? isPass(profile.perpetrators) : sNum >= 3.0);
+            updateIndicatorRow('indResponsibility', profile ? isPass(profile.responsibility) : sNum >= 3.5);
+            updateIndicatorRow('indLiability', profile ? isPass(profile.liability) : sNum >= 4.0);
+            updateIndicatorRow('indRetaliation', profile ? isPass(profile.retaliation) : sNum >= 4.5);
+
+            openModal('countryModalCard');
+        }
+
+        function updateIndicatorRow(id, pass) {
+            const row = document.getElementById(id);
+            if (!row) return;
+            const icon = row.querySelector('.ind-status-icon');
+            if (pass) {
+                row.className = 'indicator-row pass';
+                icon.innerText = '✅';
+            } else {
+                row.className = 'indicator-row fail';
+                icon.innerText = '❌';
+            }
+        }
+
+        // 8. Load Alerts & Organization Risk Registry (With FEATURE 3 Drawer)
         async function loadAlerts() {
             try {
                 const res = await fetch('/api/alerts');
                 if (!res.ok) throw new Error('HTTP ' + res.status);
-                const raw = await res.json();
-                rawAlertsData = raw.value || raw || [];
-
-                renderAlerts(rawAlertsData);
-                renderCompanyTable(rawAlertsData);
+                fullAlertsData = await res.json();
+                renderAlerts(fullAlertsData);
+                renderCompanyTable(fullAlertsData);
             } catch (err) {
                 console.error('[Alerts] Error loading alerts:', err);
-                const sample = [
-                    { company: "Apex Global Technologies", score: 78, level: "HIGH" },
-                    { company: "Beacon Hospitality Group", score: 79, level: "HIGH" },
-                    { company: "OmniStore Supercenters", score: 75, level: "HIGH" },
-                    { company: "Crestview Retail Stores", score: 75, level: "HIGH" }
-                ];
-                renderAlerts(sample);
-                renderCompanyTable(sample);
             }
         }
 
-        function renderAlerts(alerts) {
+        function renderAlerts(list) {
             const container = document.getElementById('alertsContainer');
-            container.innerHTML = '';
-
-            alerts.forEach(item => {
-                const isHigh = item.level === 'HIGH';
-                const card = document.createElement('div');
-                card.className = `alert-card ${isHigh ? 'high-pulse' : ''}`;
-                card.innerHTML = `
-                    <div class="alert-info">
-                        <h4>${isHigh ? '🚨' : '⚠️'} ${item.company}</h4>
-                        <p>High Exposure Harassment Risk</p>
-                    </div>
-                    <div class="alert-score-badge">
-                        <div class="alert-score-num">${item.score}</div>
-                        <span class="level-pill">${item.level}</span>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function renderCompanyTable(companies) {
-            const tbody = document.getElementById('companyTableBody');
-            tbody.innerHTML = '';
-
-            if (!companies.length) {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">No records found</td></tr>';
+            if (!list || list.length === 0) {
+                container.innerHTML = '<div style="color: var(--text-muted);">No active risk alerts.</div>';
                 return;
             }
 
-            companies.forEach(c => {
-                const tr = document.createElement('tr');
-                const isHigh = c.level === 'HIGH';
-                tr.innerHTML = `
-                    <td style="font-weight:600;">${c.company}</td>
-                    <td>
-                        <span style="font-weight:700; color:${isHigh ? '#f87171' : '#fbbf24'};">${c.score}</span>
-                        <span style="font-size:11px; color:var(--text-muted);"> / 100</span>
-                    </td>
-                    <td><span class="level-pill" style="${isHigh ? '' : 'background:rgba(245,158,11,0.2); border-color:rgba(245,158,11,0.4); color:#fbbf24;'}">${c.level}</span></td>
-                `;
-                tbody.appendChild(tr);
-            });
+            container.innerHTML = list.map(item => `
+                <div class="alert-card" onclick="openCompanyDrawer('${item.company.replace(/'/g, "\\'")}', ${item.score}, '${item.level}')">
+                    <div>
+                        <div class="alert-company">🚨 ${item.company}</div>
+                        <div class="alert-sub">High Exposure Harassment Risk</div>
+                    </div>
+                    <div class="alert-score-pill">
+                        <div class="alert-score-num">${item.score}</div>
+                        <span class="risk-badge risk-high">${item.level}</span>
+                    </div>
+                </div>
+            `).join('');
         }
 
-        // Table Search Filtering
-        document.getElementById('companySearch').addEventListener('input', function(e) {
-            const query = e.target.value.toLowerCase();
-            const filtered = rawAlertsData.filter(c => c.company.toLowerCase().includes(query));
+        function renderCompanyTable(list) {
+            const tbody = document.getElementById('companyTableBody');
+            if (!list || list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 40px;">No records found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = list.map(item => `
+                <tr class="clickable-row" onclick="openCompanyDrawer('${item.company.replace(/'/g, "\\'")}', ${item.score}, '${item.level}')">
+                    <td style="font-weight: 600;">${item.company}</td>
+                    <td><strong style="color: ${item.score >= 70 ? '#f87171' : '#fbbf24'};">${item.score}</strong> / 100</td>
+                    <td><span class="risk-badge ${item.level === 'HIGH' ? 'risk-high' : 'risk-medium'}">${item.level}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // Feature 3: Company Detail Drawer
+        function openCompanyDrawer(companyName, score, level) {
+            document.getElementById('compDrawerName').innerText = companyName;
+            const scoreEl = document.getElementById('compDrawerScore');
+            scoreEl.innerHTML = `${score} <span style="font-size: 18px; color: var(--text-muted);">/ 100</span>`;
+            scoreEl.style.color = score >= 70 ? '#f87171' : '#fbbf24';
+
+            const lvlBadge = document.getElementById('compDrawerLevel');
+            lvlBadge.innerText = `${level} RISK`;
+            lvlBadge.className = `risk-badge ${level === 'HIGH' ? 'risk-high' : 'risk-medium'}`;
+
+            document.getElementById('compFactorIndustry').innerText = score >= 75 ? 'High Baseline Exposure' : 'Moderate Exposure';
+            document.getElementById('compFactorSize').innerText = score >= 75 ? 'Enterprise (>10,000 workforce)' : 'Mid-Large (>2,500 workforce)';
+            document.getElementById('compFactorContext').innerText = `${(score / 20).toFixed(1)} / 5.0 (Regional Legal Exposure Index)`;
+
+            openDrawer('companyDetailDrawer');
+        }
+
+        // Sort Company Table
+        let sortDir = [true, true, true];
+        function sortTable(colIdx) {
+            const tbody = document.getElementById('companyTableBody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            if (!rows.length || rows[0].innerText.includes('No records')) return;
+
+            sortDir[colIdx] = !sortDir[colIdx];
+            const asc = sortDir[colIdx];
+
+            rows.sort((a, b) => {
+                let valA = a.children[colIdx].innerText.trim();
+                let valB = b.children[colIdx].innerText.trim();
+                if (colIdx === 1) {
+                    return asc ? parseInt(valA) - parseInt(valB) : parseInt(valB) - parseInt(valA);
+                }
+                return asc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            });
+
+            tbody.innerHTML = '';
+            rows.forEach(r => tbody.appendChild(r));
+        }
+
+        // Search Filter for Company Table
+        document.getElementById('companySearch').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase().trim();
+            const filtered = fullAlertsData.filter(i => i.company.toLowerCase().includes(term));
             renderCompanyTable(filtered);
         });
 
-        // Table Sorting
-        let currentSortCol = -1;
-        let sortAsc = true;
-        function sortTable(colIdx) {
-            if (currentSortCol === colIdx) {
-                sortAsc = !sortAsc;
-            } else {
-                currentSortCol = colIdx;
-                sortAsc = true;
+        // Feature 5: Global Search Implementation
+        const globalSearchInput = document.getElementById('globalSearchInput');
+        const clearGlobalSearch = document.getElementById('clearGlobalSearch');
+        const searchCountBadge = document.getElementById('globalSearchCount');
+
+        globalSearchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            if (!query) {
+                clearSearchState();
+                return;
             }
 
-            rawAlertsData.sort((a, b) => {
-                let vA, vB;
-                if (colIdx === 0) {
-                    vA = a.company.toLowerCase();
-                    vB = b.company.toLowerCase();
-                    return sortAsc ? vA.localeCompare(vB) : vB.localeCompare(vA);
-                } else if (colIdx === 1) {
-                    vA = a.score;
-                    vB = b.score;
-                    return sortAsc ? (vA - vB) : (vB - vA);
+            clearGlobalSearch.style.display = 'block';
+            let matchCount = 0;
+
+            // 1. Match Companies in Table
+            const rows = document.querySelectorAll('#companyTableBody tr');
+            let firstMatchedRow = null;
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                if (text.includes(query)) {
+                    row.classList.add('search-highlight');
+                    matchCount++;
+                    if (!firstMatchedRow) firstMatchedRow = row;
                 } else {
-                    vA = a.level;
-                    vB = b.level;
-                    return sortAsc ? vA.localeCompare(vB) : vB.localeCompare(vA);
+                    row.classList.remove('search-highlight');
                 }
             });
 
-            renderCompanyTable(rawAlertsData);
+            // 2. Match Countries on Map
+            let firstMatchedLayer = null;
+            if (geojsonLayer) {
+                geojsonLayer.eachLayer(layer => {
+                    const cName = (layer.feature.properties.name || '').toLowerCase();
+                    if (cName.includes(query)) {
+                        layer.setStyle({
+                            color: '#ffffff',
+                            weight: 3.5,
+                            fillOpacity: 0.95
+                        });
+                        matchCount++;
+                        if (!firstMatchedLayer) firstMatchedLayer = layer;
+                    } else {
+                        geojsonLayer.resetStyle(layer);
+                    }
+                });
+            }
+
+            searchCountBadge.style.display = 'block';
+            searchCountBadge.innerText = `${matchCount} match${matchCount === 1 ? '' : 'es'}`;
+        });
+
+        function clearSearchState() {
+            globalSearchInput.value = '';
+            clearGlobalSearch.style.display = 'none';
+            searchCountBadge.style.display = 'none';
+
+            // Remove table highlights
+            document.querySelectorAll('#companyTableBody tr').forEach(row => {
+                row.classList.remove('search-highlight');
+            });
+
+            // Reset map styles
+            if (geojsonLayer) {
+                geojsonLayer.eachLayer(layer => geojsonLayer.resetStyle(layer));
+            }
         }
+
+        clearGlobalSearch.addEventListener('click', clearSearchState);
+
+        // Enter key to scroll to first match
+        globalSearchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const highlighted = document.querySelector('.search-highlight');
+                if (highlighted) {
+                    highlighted.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    document.getElementById('worldMap').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            } else if (e.key === 'Escape') {
+                clearSearchState();
+                globalSearchInput.blur();
+            }
+        });
+
+        // Drawer & Modal Helpers
+        function openDrawer(drawerId) {
+            document.getElementById('drawerOverlay').classList.add('active');
+            document.getElementById(drawerId).classList.add('active');
+        }
+
+        function closeDrawer(drawerId) {
+            document.getElementById('drawerOverlay').classList.remove('active');
+            document.getElementById(drawerId).classList.remove('active');
+        }
+
+        function openModal(modalId) {
+            document.getElementById('modalOverlay').classList.add('active');
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById('modalOverlay').classList.remove('active');
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Close triggers
+        document.getElementById('drawerOverlay').addEventListener('click', () => {
+            closeDrawer('industrySidePanel');
+            closeDrawer('companyDetailDrawer');
+        });
+
+        document.getElementById('modalOverlay').addEventListener('click', () => {
+            closeModal('countryModalCard');
+        });
+
+        document.getElementById('closeCountryModalBtn').addEventListener('click', () => {
+            closeModal('countryModalCard');
+        });
+
+        document.getElementById('closeCompDrawerBtn').addEventListener('click', () => {
+            closeDrawer('companyDetailDrawer');
+        });
+
+        // Global Escape Key Listener for Modals, Drawers & Search
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeDrawer('industrySidePanel');
+                closeDrawer('companyDetailDrawer');
+                closeModal('countryModalCard');
+                clearSearchState();
+            }
+        });
 
         // Master Refresh Function
         async function fetchAllData() {
@@ -1448,20 +2481,13 @@
             }, 600);
         }
 
-        // Manual Refresh Button Listener
-        document.getElementById('btnRefresh').addEventListener('click', () => {
-            fetchAllData();
-        });
+        document.getElementById('btnRefresh').addEventListener('click', fetchAllData);
 
         // Auto Refresh every 30 seconds
-        setInterval(() => {
-            fetchAllData();
-        }, 30000);
+        setInterval(fetchAllData, 30000);
 
         // Initial Load on DOM Ready
-        window.addEventListener('DOMContentLoaded', () => {
-            fetchAllData();
-        });
+        window.addEventListener('DOMContentLoaded', fetchAllData);
     </script>
 </body>
 </html>
