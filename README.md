@@ -1,4 +1,5 @@
-# Workplace Harassment Pattern Analytics: A Big Data Pipeline for Structured and Semi-Structured Data Analysis
+# 🛡️ SafeSpace Analytics
+### A Big Data Pipeline for Workplace Harassment Pattern Detection
 
 ## Abstract
 Workplace harassment remains a pervasive challenge that impacts employee well-being, organizational culture, and legal compliance across diverse industries. This project delivers an end-to-end Big Data analytics pipeline designed to ingest, process, and correlate large-scale structured EEOC workplace charge records alongside semi-structured global legal frameworks. By combining distributed storage in HDFS with NoSQL document storage in MongoDB, the system enables scalable pattern discovery, trend identification, and comparative legal compliance analysis. The analytical workflow leverages Apache Pig for extract-transform-load (ETL) routines, Apache Hive for multi-dimensional data warehousing queries, Apache Sqoop for relational data interchange, and MySQL for reporting marts. Ultimately, the pipeline equips researchers and stakeholders with data-driven insights into harassment patterns and protective legislative coverage.

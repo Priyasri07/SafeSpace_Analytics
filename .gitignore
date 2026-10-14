@@ -43,3 +43,4 @@ desktop.ini
 
 # ===== WSL =====
 .wslconfig
+src/main/resources/static/world_laws.json
